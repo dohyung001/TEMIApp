@@ -1,12 +1,33 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, TouchableOpacity, SafeAreaView } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "../context/LanguageContext";
+import TTS from "../service/tts";
 
 export default function HomeScreen({ navigation }) {
   const { t } = useTranslation();
   const { language, changeLanguage } = useLanguage();
+  useEffect(() => {
+    // 화면 진입 시 음성 안내
+    const welcomeMessages = {
+      ko: "안녕하세요, 테미입니다. 무엇을 도와드릴까요?",
+      en: "Hello, I am TEMI. How can I help you?",
+      zh: "你好，我是TEMI。我能帮您什么？",
+    };
 
+    TTS.speak(
+      welcomeMessages[language],
+      `${language}-${language === "ko" ? "KR" : language === "en" ? "US" : "CN"}`
+    );
+
+    return () => TTS.stop();
+  }, [language]);
+
+  const handleMenuPress = (screen, title) => {
+    // 메뉴 선택 시 음성
+    TTS.speak(`${title} 화면으로 이동합니다`);
+    navigation.navigate(screen);
+  };
   const menuItems = [
     {
       id: 1,
