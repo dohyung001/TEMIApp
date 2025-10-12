@@ -4,7 +4,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import HomeScreen from "../screen/HomeScreen";
 import NavigationScreen from "../screen/NavigationScreen";
 import BoothInfoScreen from "../screen/BoothInfoScreen";
-import PhotoScreen from "../screen/PhotoScreen";
+import PhotoScreen from "../screen/PhotoScreen-nfc";
 import FortuneScreen from "../screen/FortuneScreen";
 import GameScreen from "../screen/GameScreen";
 import RecommendScreen from "../screen/RecommendScreen";
