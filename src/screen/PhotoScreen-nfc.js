@@ -15,15 +15,25 @@ import { useTranslation } from "react-i18next";
 
 export default function PhotoScreen({ navigation }) {
   const { t } = useTranslation();
+
+  // 카메라 권한 관리
   const [permission, requestPermission] = useCameraPermissions();
+
+  // 촬영된 사진 URI 저장
   const [photo, setPhoto] = useState(null);
+
+  // 카메라 참조
   const cameraRef = useRef(null);
+
+  // 카메라 방향 (전면/후면)
   const [facing, setFacing] = useState("back");
 
+  // 권한 로딩 중
   if (!permission) {
     return <View />;
   }
 
+  // 권한 없을 때 권한 요청 화면
   if (!permission.granted) {
     return (
       <SafeAreaView className="flex-1 bg-white justify-center items-center p-6">
@@ -40,11 +50,16 @@ export default function PhotoScreen({ navigation }) {
     );
   }
 
+  /**
+   * 사진 촬영 함수
+   * - 카메라로 사진 촬영
+   * - URI를 state에 저장
+   */
   const takePicture = async () => {
     if (cameraRef.current) {
       try {
         const photo = await cameraRef.current.takePictureAsync({
-          quality: 0.8,
+          quality: 0.8, // 화질 (0.0 ~ 1.0)
         });
         setPhoto(photo.uri);
       } catch (error) {
@@ -54,7 +69,13 @@ export default function PhotoScreen({ navigation }) {
     }
   };
 
+  /**
+   * NFC로 사진 전송
+   * - Android Intent 사용
+   * - 공유 시트 열어서 사용자가 전송 방법 선택
+   */
   const shareViaNFC = async () => {
+    // Android만 지원
     if (Platform.OS !== "android") {
       Alert.alert("지원 안 됨", "NFC는 Android에서만 작동합니다.");
       return;
@@ -64,15 +85,16 @@ export default function PhotoScreen({ navigation }) {
       console.log("📡 NFC 공유 시작...");
       console.log("Photo URI:", photo);
 
-      // Android Intent로 NFC 공유 시도
+      // Android 공유 Intent 실행
       await IntentLauncher.startActivityAsync("android.intent.action.SEND", {
         type: "image/jpeg",
         extra: {
-          "android.intent.extra.STREAM": photo,
+          "android.intent.extra.STREAM": photo, // 이미지 파일 URI
         },
-        flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
+        flags: 1, // 읽기 권한 부여
       });
 
+      // 사용자 안내
       Alert.alert(
         "NFC 전송",
         "공유 방법을 선택하고,\n상대방 휴대폰을 TEMI에 가까이 대세요.",
@@ -87,6 +109,11 @@ export default function PhotoScreen({ navigation }) {
     }
   };
 
+  /**
+   * Android Beam으로 전송 (구형 방식)
+   * - Android 9 이하에서만 작동
+   * - 두 기기를 등 맞대서 전송
+   */
   const shareViaBeam = async () => {
     if (Platform.OS !== "android") {
       Alert.alert("지원 안 됨", "Android Beam은 Android에서만 작동합니다.");
@@ -94,7 +121,7 @@ export default function PhotoScreen({ navigation }) {
     }
 
     try {
-      // Android Beam 설정 확인 안내
+      // 사용자에게 사용 방법 안내
       Alert.alert(
         "📡 Android Beam 사용",
         "1. 설정 > 연결 > NFC 활성화\n2. Android Beam 활성화\n3. 두 기기를 등 맞대기\n\n계속하시겠습니까?",
@@ -120,8 +147,12 @@ export default function PhotoScreen({ navigation }) {
     }
   };
 
+  /**
+   * 일반 공유 (대체 방법)
+   * - NFC 안 되면 이걸로 공유
+   * - Bluetooth, 이메일 등 선택 가능
+   */
   const shareFallback = async () => {
-    // NFC 안 되면 일반 공유
     try {
       await IntentLauncher.startActivityAsync("android.intent.action.SEND", {
         type: "image/jpeg",
@@ -135,19 +166,26 @@ export default function PhotoScreen({ navigation }) {
     }
   };
 
+  /**
+   * 카메라 방향 전환 (전면 ⟷ 후면)
+   */
   const toggleCamera = () => {
     setFacing((current) => (current === "back" ? "front" : "back"));
   };
 
+  /**
+   * 다시 촬영 (사진 초기화)
+   */
   const reset = () => {
     setPhoto(null);
   };
 
-  // 사진 촬영 후 결과 화면
+  // ========== 사진 촬영 후 결과 화면 ==========
   if (photo) {
     return (
       <SafeAreaView className="flex-1 bg-white">
         <View className="flex-1 p-5">
+          {/* 뒤로가기 */}
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text className="text-xl text-blue-500 font-semibold">
               ← {t("back")}
@@ -167,7 +205,7 @@ export default function PhotoScreen({ navigation }) {
             />
           </View>
 
-          {/* 안내 카드 */}
+          {/* NFC 사용 방법 안내 */}
           <View className="bg-blue-50 p-4 rounded-2xl mb-4">
             <Text className="text-lg font-bold mb-2">📡 NFC 전송 방법</Text>
             <Text className="text-gray-700 leading-6">
@@ -178,9 +216,9 @@ export default function PhotoScreen({ navigation }) {
             </Text>
           </View>
 
-          {/* 버튼들 */}
+          {/* 전송 버튼들 */}
           <View className="gap-3">
-            {/* NFC 전송 */}
+            {/* 1. NFC 전송 (메인) */}
             <TouchableOpacity
               className="bg-purple-500 py-5 rounded-2xl"
               onPress={shareViaNFC}
@@ -196,7 +234,7 @@ export default function PhotoScreen({ navigation }) {
               </View>
             </TouchableOpacity>
 
-            {/* Android Beam (옵션) */}
+            {/* 2. Android Beam (구형 기기용) */}
             <TouchableOpacity
               className="bg-indigo-500 py-4 rounded-2xl"
               onPress={shareViaBeam}
@@ -206,7 +244,7 @@ export default function PhotoScreen({ navigation }) {
               </Text>
             </TouchableOpacity>
 
-            {/* 일반 공유 (대체) */}
+            {/* 3. 일반 공유 (대체 방법) */}
             <TouchableOpacity
               className="bg-green-500 py-4 rounded-2xl"
               onPress={shareFallback}
@@ -216,7 +254,7 @@ export default function PhotoScreen({ navigation }) {
               </Text>
             </TouchableOpacity>
 
-            {/* 다시 촬영 */}
+            {/* 4. 다시 촬영 */}
             <TouchableOpacity
               className="bg-gray-200 py-4 rounded-2xl"
               onPress={reset}
@@ -238,13 +276,14 @@ export default function PhotoScreen({ navigation }) {
     );
   }
 
-  // 카메라 화면
+  // ========== 카메라 화면 ==========
   return (
     <SafeAreaView className="flex-1 bg-black">
       <CameraView ref={cameraRef} className="flex-1" facing={facing}>
         <View className="flex-1 justify-between p-6">
           {/* 상단 버튼 */}
           <View className="flex-row justify-between">
+            {/* 뒤로가기 */}
             <TouchableOpacity
               className="bg-black/50 px-4 py-2 rounded-full"
               onPress={() => navigation.goBack()}
@@ -252,6 +291,7 @@ export default function PhotoScreen({ navigation }) {
               <Text className="text-white text-lg font-semibold">← 뒤로</Text>
             </TouchableOpacity>
 
+            {/* 카메라 전환 */}
             <TouchableOpacity
               className="bg-black/50 px-4 py-2 rounded-full"
               onPress={toggleCamera}
