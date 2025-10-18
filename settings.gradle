@@ -1,0 +1,21 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        google()
+        mavenCentral()
+
+        // Temi SDK repository 추가
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+rootProject.name = "TemiReactApp"
+include ':app'
