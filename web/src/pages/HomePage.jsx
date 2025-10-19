@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { TemiBridge } from "../services/TemiBridge";
+import { TemiBridge } from "../services/temiBridge";
 import RobotIcon from "../assets/icons/robot.svg?react";
 import BlueRobotIcon from "../assets/icons/blue_robot.svg?react";
 import CameraIcon from "../assets/icons/camera.svg?react";
@@ -24,10 +24,10 @@ export default function HomePage() {
       path: "/navigation",
     },
     {
-      id: "booth",
+      id: "info",
       icon: <InfoIcon />,
       title: "행사 및<br />부스 안내",
-      path: "/booth",
+      path: "/info",
     },
     {
       id: "chat",
@@ -45,13 +45,13 @@ export default function HomePage() {
       id: "recommend",
       icon: <StarIcon />,
       title: "부스 추천 받기",
-      path: "/favorite",
+      path: "/recommend",
     },
     {
       id: "fortune",
       icon: <FortuneIcon />,
       title: "오늘의 운세",
-      path: "/schedule",
+      path: "/fortune",
     },
     { id: "survey", icon: <SurveyIcon />, title: "설문조사", path: "/survey" },
   ];

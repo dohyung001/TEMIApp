@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { TemiBridge } from "../services/TemiBridge";
+import { TemiBridge } from "../services/temiBridge";
 import BackButton from "../components/Button";
 
 export default function ChatPage() {
