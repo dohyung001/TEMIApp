@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.kw.temireactapp"
-        minSdk 24
+        minSdk 23
         targetSdk 36
         versionCode 1
         versionName "1.0"
@@ -31,6 +31,12 @@ android {
         jvmTarget = '11'
     }
 }
+task copyReactBuild(type: Copy) {
+    from '../web/dist'
+    into 'src/main/assets'
+}
+
+preBuild.dependsOn copyReactBuild
 
 dependencies {
 
