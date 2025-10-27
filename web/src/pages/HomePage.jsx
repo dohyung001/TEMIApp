@@ -121,6 +121,7 @@ export default function HomePage() {
           <p className="text-gray-600 text-3xl">
             터치하거나 음성으로 명령해주세요
           </p>
+          <button onClick={() => navigate("/test")}>테스트</button>
         </div>
       </div>
     </div>

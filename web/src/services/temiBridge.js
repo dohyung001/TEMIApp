@@ -2,13 +2,13 @@ class TemiBridgeService {
   constructor() {
     this.listeners = new Map();
 
-    // 네이티브 이벤트 리스너 설정
     window.onTemiLocationStatus = (data) => {
       this.emit("locationStatus", data);
     };
   }
 
-  // Temi 명령
+  // ========== 음성 (Speech) ==========
+
   speak(text) {
     if (window.Temi) {
       window.Temi.speak(text);
@@ -16,6 +16,8 @@ class TemiBridgeService {
       console.log("[Dev] speak:", text);
     }
   }
+
+  // ========== 이동 (Navigation) ==========
 
   goTo(location) {
     if (window.Temi) {
@@ -25,6 +27,34 @@ class TemiBridgeService {
     }
   }
 
+  getLocations() {
+    if (window.Temi) {
+      const result = window.Temi.getLocations();
+      return JSON.parse(result);
+    }
+    return ["Home", "Kitchen", "Living Room", "Bedroom"];
+  }
+
+  saveLocation(name) {
+    if (window.Temi) {
+      return window.Temi.saveLocation(name);
+    } else {
+      console.log("[Dev] saveLocation:", name);
+      return true;
+    }
+  }
+
+  deleteLocation(name) {
+    if (window.Temi) {
+      return window.Temi.deleteLocation(name);
+    } else {
+      console.log("[Dev] deleteLocation:", name);
+      return true;
+    }
+  }
+
+  // ========== Follow Mode ==========
+
   followMe() {
     if (window.Temi) {
       window.Temi.followMe();
@@ -32,6 +62,16 @@ class TemiBridgeService {
       console.log("[Dev] followMe");
     }
   }
+
+  constraintBeWith() {
+    if (window.Temi) {
+      window.Temi.constraintBeWith();
+    } else {
+      console.log("[Dev] constraintBeWith");
+    }
+  }
+
+  // ========== Movement ==========
 
   stopMovement() {
     if (window.Temi) {
@@ -41,14 +81,23 @@ class TemiBridgeService {
     }
   }
 
-  getLocations() {
+  turnBy(degrees, speed = 1.0) {
     if (window.Temi) {
-      const result = window.Temi.getLocations();
-      return JSON.parse(result);
+      window.Temi.turnBy(degrees, speed);
+    } else {
+      console.log("[Dev] turnBy:", degrees, speed);
     }
-    // 개발 모드 더미 데이터
-    return ["Home", "Kitchen", "Living Room", "Bedroom"];
   }
+
+  skidJoy(x, y) {
+    if (window.Temi) {
+      window.Temi.skidJoy(x, y);
+    } else {
+      console.log("[Dev] skidJoy:", x, y);
+    }
+  }
+
+  // ========== 머리 제어 (Head Control) ==========
 
   tiltHead(angle) {
     if (window.Temi) {
@@ -58,6 +107,34 @@ class TemiBridgeService {
     }
   }
 
+  tiltBy(degrees, speed) {
+    if (window.Temi) {
+      window.Temi.tiltBy(degrees, speed);
+    } else {
+      console.log("[Dev] tiltBy:", degrees, speed);
+    }
+  }
+
+  // ========== 정보 조회 ==========
+
+  getBatteryLevel() {
+    if (window.Temi) {
+      const result = window.Temi.getBatteryLevel();
+      return JSON.parse(result);
+    }
+    return { level: 85, isCharging: false };
+  }
+
+  getRobotInfo() {
+    if (window.Temi) {
+      const result = window.Temi.getRobotInfo();
+      return JSON.parse(result);
+    }
+    return { serialNumber: "DEV-0000", version: "1.0.0" };
+  }
+
+  // ========== 유틸 ==========
+
   showToast(message) {
     if (window.Temi) {
       window.Temi.showToast(message);
@@ -66,7 +143,8 @@ class TemiBridgeService {
     }
   }
 
-  // 이벤트 시스템
+  // ========== 이벤트 시스템 ==========
+
   on(event, callback) {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
@@ -91,7 +169,6 @@ class TemiBridgeService {
     }
   }
 
-  // 네이티브 환경 체크
   isNativeAvailable() {
     return typeof window.Temi !== "undefined";
   }

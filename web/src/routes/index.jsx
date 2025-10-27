@@ -12,7 +12,7 @@ import RecommendPage from "../pages/RecommendPage";
 import FortunePage from "../pages/FortunePage";
 import SurveyPage from "../pages/SurveyPage";
 import NotFoundPage from "../pages/NotFoundPage";
-
+import TestPage from "../pages/TestPage";
 const router = createBrowserRouter([
   // 홈 (HomeLayout)
   {
@@ -31,6 +31,7 @@ const router = createBrowserRouter([
       { path: "/recommend", element: <RecommendPage /> }, // 부스 추천
       { path: "/fortune", element: <FortunePage /> }, // 오늘의 운세
       { path: "/survey", element: <SurveyPage /> }, // 설문조사
+      { path: "/test", element: <TestPage /> }, // 설문조사
     ],
   },
 
