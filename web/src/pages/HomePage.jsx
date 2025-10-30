@@ -32,14 +32,14 @@ export default function HomePage() {
     {
       id: "chat",
       icon: <RobotIcon />,
-      title: "테미랑 <br /> 대화하기",
+      title: "테미랑 놀기",
       path: "/chat",
     },
     {
-      id: "photo",
-      icon: <CameraIcon />,
-      title: "사진촬영<br /> & 전송",
-      path: "/photo",
+      id: "fortune",
+      icon: <FortuneIcon />,
+      title: "오늘의 운세",
+      path: "/fortune",
     },
     {
       id: "recommend",
@@ -48,11 +48,12 @@ export default function HomePage() {
       path: "/recommend",
     },
     {
-      id: "fortune",
-      icon: <FortuneIcon />,
-      title: "오늘의 운세",
-      path: "/fortune",
+      id: "photo",
+      icon: <CameraIcon />,
+      title: "사진촬영<br /> & 전송",
+      path: "/photo",
     },
+
     { id: "survey", icon: <SurveyIcon />, title: "설문조사", path: "/survey" },
   ];
 
@@ -119,7 +120,7 @@ export default function HomePage() {
         {/* 하단 안내 */}
         <div className="text-center mt-12">
           <p className="text-gray-600 text-3xl">
-            터치하거나 음성으로 명령해주세요
+            터치하거나 음성으로 ‘테미야~’ 부른 후에 명령해주세요
           </p>
           <button onClick={() => navigate("/test")}>테스트</button>
         </div>

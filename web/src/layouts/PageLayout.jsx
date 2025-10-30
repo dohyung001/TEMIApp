@@ -4,7 +4,7 @@ import HomeButton from "../components/HomeButton";
 export default function PageLayout() {
   return (
     <div
-      className={`min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-20`}
+      className={`min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-15`}
     >
       {/* 뒤로가기 버튼 */}
       <HomeButton />

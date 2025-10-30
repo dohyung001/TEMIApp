@@ -7,7 +7,6 @@ import NavigationPage from "../pages/NavigationPage";
 import InfoPage from "../pages/InfoPage";
 import ChatPage from "../pages/ChatPage";
 import PhotoPage from "../pages/PhotoPage";
-import CustomPage from "../pages/CustomPage";
 import RecommendPage from "../pages/RecommendPage";
 import FortunePage from "../pages/FortunePage";
 import SurveyPage from "../pages/SurveyPage";
@@ -27,7 +26,7 @@ const router = createBrowserRouter([
       { path: "/info", element: <InfoPage /> }, // 행사 및 부스 안내
       { path: "/chat", element: <ChatPage /> }, // 테미랑 대화
       { path: "/photo", element: <PhotoPage /> }, // 사진
-      { path: "/custom", element: <CustomPage /> }, // 커스터마이징
+
       { path: "/recommend", element: <RecommendPage /> }, // 부스 추천
       { path: "/fortune", element: <FortunePage /> }, // 오늘의 운세
       { path: "/survey", element: <SurveyPage /> }, // 설문조사
