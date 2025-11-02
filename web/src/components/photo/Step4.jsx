@@ -1,212 +1,129 @@
-// web/src/components/photo/Step4.jsx
-import { useRef, useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { composeImageWithTheme } from "../../utils/imageComposer";
+import RoundButton from "../RoundButton";
+import WhiteCameraIcon from "../../assets/icons/white_camera.svg?react";
 
-export default function Step4({
-  capturedPhoto,
-  selectedTheme,
-  onRetake,
-  onChangeTheme,
-  onConfirm,
-}) {
-  const canvasRef = useRef(null);
-  const [compositePhoto, setCompositePhoto] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+export default function Step4({ capturedPhoto, themes, onConfirm, onCancel }) {
+  const [selectedThemeId, setSelectedThemeId] = useState(null);
+  const [composedPreviews, setComposedPreviews] = useState({});
+  const [composing, setComposing] = useState(false);
+  const [loadingPreviews, setLoadingPreviews] = useState(true);
 
+  // 컴포넌트 마운트 시 모든 테마의 미리보기 생성
   useEffect(() => {
-    if (capturedPhoto && selectedTheme) {
-      generateComposite();
+    generateAllPreviews();
+  }, []);
+
+  const generateAllPreviews = async () => {
+    setLoadingPreviews(true);
+    const previews = {};
+
+    for (const theme of themes) {
+      try {
+        const composedImage = await composeImageWithTheme(capturedPhoto, theme);
+        previews[theme.id] = composedImage;
+      } catch (error) {
+        console.error(`테마 ${theme.id} 미리보기 생성 실패:`, error);
+      }
     }
-  }, [capturedPhoto, selectedTheme]);
 
-  const generateComposite = () => {
-    setIsLoading(true);
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-
-    // 16:9 비율로 변경 (1920x1080)
-    canvas.width = 1920;
-    canvas.height = 1080;
-
-    const photoImage = new Image();
-
-    photoImage.onload = () => {
-      // 1. 배경 흰색
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, 1920, 1080);
-
-      // 2. 사진 그리기 (좌우반전 복원) - 프레임 안쪽에 배치
-      ctx.save();
-      ctx.scale(-1, 1);
-      ctx.drawImage(photoImage, -1870, 100, 1820, 880); // 16:9 비율에 맞춰 조정
-      ctx.restore();
-
-      // 3. 테마 프레임 그리기
-      drawThemeFrame(ctx, selectedTheme);
-
-      // 4. 최종 이미지
-      const finalImage = canvas.toDataURL("image/jpeg", 0.95);
-      setCompositePhoto(finalImage);
-      setIsLoading(false);
-    };
-
-    photoImage.onerror = () => {
-      setIsLoading(false);
-      alert("이미지 로드 실패");
-    };
-
-    photoImage.src = capturedPhoto;
+    setComposedPreviews(previews);
+    setLoadingPreviews(false);
   };
 
-  // 테마별 프레임 그리기 - 16:9 비율에 맞춰 수정
-  const drawThemeFrame = (ctx, theme) => {
-    if (!theme || !theme.color1 || !theme.color2) return;
-
-    // 그라데이션
-    const gradient = ctx.createLinearGradient(0, 0, 1920, 0);
-    gradient.addColorStop(0, theme.color1);
-    gradient.addColorStop(1, theme.color2);
-
-    // 🎨 상단 헤더 (100px)
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 1920, 100);
-
-    // 테두리
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(0, 0, 1920, 100);
-
-    // 헤더 텍스트
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 60px sans-serif";
-    ctx.textAlign = "center";
-    ctx.shadowColor = "rgba(0,0,0,0.3)";
-    ctx.shadowBlur = 10;
-    ctx.fillText(`${theme.emoji} ${theme.name.toUpperCase()}`, 960, 65);
-    ctx.shadowBlur = 0;
-
-    // 🎨 하단 푸터 (100px)
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 980, 1920, 100);
-
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(0, 980, 1920, 100);
-
-    // 푸터 텍스트
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 40px sans-serif";
-    const today = new Date().toLocaleDateString("ko-KR");
-    ctx.shadowColor = "rgba(0,0,0,0.3)";
-    ctx.shadowBlur = 10;
-    ctx.fillText(`${today} | TEMI PHOTO BOOTH`, 960, 1040);
-    ctx.shadowBlur = 0;
-
-    // 🎨 좌우 사이드 바 (50px)
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 100, 50, 880);
-    ctx.fillRect(1870, 100, 50, 880);
-
-    // 사이드 바 테두리
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(0, 100, 50, 880);
-    ctx.strokeRect(1870, 100, 50, 880);
-
-    // 🎨 안쪽 장식 라인
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 3;
-    ctx.setLineDash([20, 15]);
-    ctx.strokeRect(60, 110, 1800, 860);
-    ctx.setLineDash([]);
-
-    // 🎨 모서리 장식
-    const corners = [
-      { x: 60, y: 110 }, // 왼쪽 위
-      { x: 1860, y: 110 }, // 오른쪽 위
-      { x: 60, y: 970 }, // 왼쪽 아래
-      { x: 1860, y: 970 }, // 오른쪽 아래
-    ];
-
-    ctx.fillStyle = "#ffffff";
-    corners.forEach((corner) => {
-      ctx.beginPath();
-      ctx.arc(corner.x, corner.y, 10, 0, Math.PI * 2);
-      ctx.fill();
-    });
+  const handleThemeClick = (themeId) => {
+    setSelectedThemeId(themeId);
   };
 
-  if (!capturedPhoto || !selectedTheme) {
+  const handleSend = () => {
+    if (!selectedThemeId || !composedPreviews[selectedThemeId]) return;
+
+    // 이미 합성된 이미지를 사용
+    const composedPhoto = composedPreviews[selectedThemeId];
+    onConfirm(selectedThemeId, composedPhoto);
+  };
+
+  // 로딩 중
+  if (loadingPreviews) {
     return (
-      <div className="flex flex-col items-center">
-        <h2 className="text-6xl font-bold mb-4">오류가 발생했습니다</h2>
-        <button
-          onClick={onRetake}
-          className="px-12 py-6 rounded-[28px] bg-blue-600 text-white text-3xl"
-        >
-          다시 촬영하기
-        </button>
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="w-20 h-20 border-8 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+        <p className="text-3xl font-bold text-gray-800">
+          테마 미리보기 생성 중...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center min-h-screen px-8">
-      <h2 className="text-6xl font-bold mb-4">촬영 결과를 확인하세요</h2>
-
-      {/* 합성된 사진 미리보기 - 16:9 비율 */}
-      <div className="relative w-full max-w-[1400px]">
-        {isLoading ? (
-          <div
-            className="rounded-[32px] shadow-2xl border-8 border-white bg-gray-100 flex items-center justify-center w-full"
-            style={{ aspectRatio: "16/9" }}
+    <div className="flex flex-col items-center justify-center min-h-screen p-8">
+      {/* 3개 프레임 미리보기 (합성된 이미지) */}
+      <div className="flex gap-8 mb-12">
+        {themes.map((theme) => (
+          <button
+            key={theme.id}
+            onClick={() => handleThemeClick(theme.id)}
+            disabled={composing}
+            className={`
+              relative
+              
+              transition-all
+              
+              ${composing ? "opacity-50 cursor-not-allowed" : ""}
+            `}
+            style={{
+              boxShadow:
+                selectedThemeId === theme.id
+                  ? "0 0 0 8px #3B82F6" // 선택 시 파란 테두리
+                  : "0 0 16.9px 0 #000000", // 피그마 섀도우
+            }}
           >
-            <div className="text-center">
-              <div className="text-6xl mb-4 animate-bounce">🎨</div>
-              <p className="text-3xl text-gray-600">이미지 합성 중...</p>
+            {/* 합성된 사진 미리보기 */}
+            <div className="w-full h-full overflow-hidden">
+              {composedPreviews[theme.id] ? (
+                <img
+                  src={composedPreviews[theme.id]}
+                  alt={theme.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-600 flex items-center justify-center">
+                  <span className="text-white text-2xl">로딩 실패</span>
+                </div>
+              )}
             </div>
-          </div>
-        ) : (
-          <img
-            src={compositePhoto}
-            alt="합성된 사진"
-            className="rounded-[32px] shadow-2xl border-8 border-white w-full"
-            style={{ aspectRatio: "16/9", objectFit: "cover" }}
-          />
-        )}
+
+            {/* 선택 표시 (체크마크) */}
+            {selectedThemeId === theme.id && (
+              <div className="absolute -top-4 -right-4 bg-blue-500 text-white rounded-full w-12 h-12 flex items-center justify-center text-2xl font-bold shadow-lg">
+                ✓
+              </div>
+            )}
+          </button>
+        ))}
       </div>
 
-      {/* 버튼들 */}
-      <div className="flex gap-8 mt-12">
-        <button
-          onClick={onRetake}
-          className="flex items-center justify-center gap-6 px-32 py-8 rounded-full  
-                   bg-gradient-to-b from-[#9E9E9E] to-[#707070] text-white 
-                  font-semibold text-5xl tracking-tight shadow-[0_12px_48px_rgba(112,112,112,0.4)]"
+      {/* 버튼 영역 */}
+      <div className="flex gap-8">
+        {/* 재촬영 버튼 */}
+        <RoundButton
+          icon={<WhiteCameraIcon />}
+          disabled={composing}
+          onClick={onCancel}
+          color="gray"
         >
           재촬영
-        </button>
-        <button
-          onClick={onChangeTheme}
-          className="flex items-center justify-center gap-6 px-32 py-8 rounded-full  
-                   bg-gradient-to-b from-[#9E9E9E] to-[#707070] text-white 
-                  font-semibold text-5xl tracking-tight shadow-[0_12px_48px_rgba(112,112,112,0.4)]"
+        </RoundButton>
+        {/* 전송 버튼 */}
+        <RoundButton
+          icon={<WhiteCameraIcon />}
+          disabled={!selectedThemeId || composing}
+          onClick={handleSend}
+          color="blue"
         >
-          테마 변경
-        </button>
-
-        <button
-          onClick={() => onConfirm(compositePhoto)}
-          className=" flex items-center gap-4 px-32 py-8 rounded-full  
-         bg-gradient-to-b from-[#3071FF] to-[#1D4ED8] 
-         text-white font-semibold text-5xl
-         shadow-[0_19px_42px_rgba(37,99,235,0.38)] "
-        >
-          전송
-        </button>
+          저장하기
+        </RoundButton>
       </div>
-
-      {/* 숨겨진 캔버스 */}
-      <canvas ref={canvasRef} style={{ display: "none" }} />
     </div>
   );
 }

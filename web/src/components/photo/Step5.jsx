@@ -1,181 +1,123 @@
 import { useState, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import RightArrowIcon from "../../assets/icons/right_arrow.svg?react";
+import axios from "axios";
 
-export default function Step5({
-  finalPhoto,
-  email,
-  sendMethod,
-  onEmailChange,
-  onEmailSend,
-  onReset,
-  onGoHome,
-}) {
+export default function Step5({ finalPhoto, onReset, onGoHome }) {
   const [qrUrl, setQrUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Base64 → Blob 변환
-  const base64ToBlob = (base64) => {
-    const base64Data = base64.split(",")[1];
-    const byteCharacters = atob(base64Data);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
+  // 컴포넌트 마운트 시 자동으로 QR 생성
+  useEffect(() => {
+    if (finalPhoto && !qrUrl) {
+      uploadToImgBB();
     }
-    return new Blob([new Uint8Array(byteNumbers)], { type: "image/jpeg" });
-  };
+  }, [finalPhoto]);
 
-  // file.io 업로드 후 QR 생성
-  const handleGenerateQr = async () => {
+  // ImgBB에 이미지 업로드
+  const uploadToImgBB = async () => {
+    if (!finalPhoto) return;
+
     try {
       setLoading(true);
       setError(null);
 
-      const blob = base64ToBlob(finalPhoto);
+      // Base64에서 data:image/jpeg;base64, 부분 제거
+      const base64Data = finalPhoto.split(",")[1];
+
+      // FormData 생성
       const formData = new FormData();
-      formData.append("file", blob, `temi-photo-${Date.now()}.jpg`);
+      formData.append("key", "e947920cd2d87b83c74bfdb195b2a18f");
+      formData.append("image", base64Data);
+      formData.append("expiration", 604800); // 7일 후 삭제
 
-      // file.io 업로드
-      const res = await fetch("https://file.io/?expires=1d", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
+      // axios로 업로드
+      const response = await axios.post(
+        "https://api.imgbb.com/1/upload",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
-      if (data.success) {
-        setQrUrl(data.link); // 다운로드 가능한 링크
+      if (response.data.success && response.data.data.url) {
+        setQrUrl(response.data.data.url);
+        console.log("✅ 업로드 성공:", response.data.data.url);
       } else {
-        throw new Error("파일 업로드 실패");
+        throw new Error("업로드 실패");
       }
     } catch (err) {
-      console.error(err);
-      setError("업로드 중 오류가 발생했습니다.");
+      console.error("❌ 업로드 에러:", err);
+      setError("이미지 업로드에 실패했습니다");
     } finally {
       setLoading(false);
     }
   };
 
-  // 이미지 직접 다운로드
-  const handleDirectDownload = () => {
-    const link = document.createElement("a");
-    link.href = finalPhoto;
-    link.download = `temi-photo-${Date.now()}.jpg`;
-    link.click();
-  };
-
-  // QR 화면
-  if (qrUrl) {
+  // 로딩 중
+  if (loading) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center px-8">
-        <h2 className="text-6xl font-bold mb-8">QR 코드를 스캔하세요</h2>
-        <p className="text-3xl text-slate-600 mb-12">
-          ⚠️ 링크는 1일 후 자동 만료됩니다
-        </p>
+      <div className="flex flex-col items-center justify-center  ">
+        <div className="w-20 h-20 border-8 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+        <h2 className="text-4xl font-bold text-gray-800">QR 코드 생성 중...</h2>
+      </div>
+    );
+  }
 
-        <div className="bg-white rounded-[32px] p-16 shadow-2xl mb-12">
-          <QRCodeSVG value={qrUrl} size={400} level="M" />
-          <p className="text-2xl text-gray-600 mt-8 text-center">
-            스마트폰 카메라로 스캔하여 사진 다운로드
-          </p>
-        </div>
-
-        <div className="flex gap-6">
+  // 에러 발생
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center   p-8">
+        <div className="text-8xl mb-8">❌</div>
+        <h2 className="text-4xl font-bold text-red-600 mb-4">{error}</h2>
+        <div className="flex gap-6 mt-8">
           <button
-            onClick={() => setQrUrl(null)}
-            className="px-16 py-6 rounded-[28px] border-2 border-slate-300 
-                     text-slate-600 font-semibold text-3xl hover:bg-slate-100 transition"
+            onClick={uploadToImgBB}
+            className="px-12 py-5 rounded-full bg-blue-500 hover:bg-blue-600 text-white font-bold text-2xl shadow-xl transition-all"
           >
-            ← 뒤로
+            다시 시도
           </button>
-
           <button
             onClick={onReset}
-            className="px-16 py-6 rounded-[28px] bg-gradient-to-b from-[#3071FF] to-[#1D4ED8] 
-                     text-white font-semibold text-3xl shadow-lg hover:opacity-90 transition"
+            className="px-12 py-5 rounded-full bg-gray-500 hover:bg-gray-600 text-white font-bold text-2xl shadow-xl transition-all"
           >
-            다시 촬영하기
+            처음으로
+          </button>
+          <button
+            onClick={onGoHome}
+            className="px-12 py-5 rounded-full bg-green-500 hover:bg-green-600 text-white font-bold text-2xl shadow-xl transition-all"
+          >
+            홈으로
           </button>
         </div>
       </div>
     );
   }
 
-  // 메인 화면
+  // QR 코드 표시
   return (
-    <div className="h-screen flex flex-col items-center justify-center px-8">
-      <h2 className="text-6xl font-bold mb-4">
-        사진을 받으실 방법을 선택하세요
-      </h2>
-      <p className="text-3xl text-slate-600 mb-16">
-        원하시는 방법을 선택하세요
+    <div className="flex flex-col items-center justify-center ">
+      {/* 타이틀 */}
+      <h1 className="text-6xl font-bold text-blue-600 mb-4">QR 생성 완료!</h1>
+      <p className="text-3xl text-gray-600 mb-12">
+        카메라로 QR코드를 촬영해주세요
       </p>
 
-      <div className="grid grid-cols-3 gap-12 max-w-7xl">
-        {/* 직접 다운로드 */}
-        <button
-          onClick={handleDirectDownload}
-          className="bg-white rounded-[32px] p-12 shadow-xl hover:shadow-2xl 
-                   hover:scale-105 transition-all border-4 border-slate-200 hover:border-blue-400"
-        >
-          <div className="text-8xl mb-4">💾</div>
-          <h3 className="text-4xl font-bold text-gray-800 mb-3">다운로드</h3>
-          <p className="text-xl text-gray-600">
-            클릭하여
-            <br />
-            바로 저장
-          </p>
-        </button>
-
-        {/* QR 코드 */}
-        <button
-          onClick={handleGenerateQr}
-          disabled={loading}
-          className={`bg-white rounded-[32px] p-12 shadow-xl border-4 transition-all 
-            ${
-              loading
-                ? "opacity-70"
-                : "hover:shadow-2xl hover:scale-105 hover:border-blue-400"
-            }`}
-        >
-          <div className="text-8xl mb-4">📱</div>
-          <h3 className="text-4xl font-bold text-gray-800 mb-3">QR 코드</h3>
-          <p className="text-xl text-gray-600">
-            스마트폰으로
-            <br />
-            스캔하기
-          </p>
-          {loading && (
-            <p className="text-lg text-blue-600 mt-4 animate-pulse">
-              업로드 중...
-            </p>
-          )}
-          {error && <p className="text-lg text-red-500 mt-4">{error}</p>}
-        </button>
-
-        {/* 이메일 */}
-        <div className="bg-white rounded-[32px] p-12 shadow-xl border-4 border-slate-200">
-          <div className="text-8xl mb-4">✉️</div>
-          <h3 className="text-4xl font-bold text-gray-800 mb-4">이메일</h3>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => onEmailChange(e.target.value)}
-            placeholder="이메일 입력"
-            className="w-full px-4 py-3 text-xl rounded-xl border-2 border-slate-300 
-                     mb-4 text-center focus:outline-none focus:border-blue-500 transition"
-          />
-          <button
-            onClick={onEmailSend}
-            className="w-full flex items-center justify-center gap-3 px-6 py-3 
-                     rounded-[20px] bg-gradient-to-b from-[#3071FF] to-[#1D4ED8] 
-                     text-white font-semibold text-2xl shadow-lg hover:opacity-90 transition"
-          >
-            전송
-            <RightArrowIcon className="w-5 h-5" />
-          </button>
-        </div>
+      {/* QR 코드 */}
+      <div className="bg-white rounded-3xl p-12 shadow-2xl mb-8">
+        {qrUrl ? (
+          <QRCodeSVG value={qrUrl} size={400} level="H" includeMargin={true} />
+        ) : (
+          <div className="w-[400px] h-[400px] bg-gray-200 animate-pulse rounded-xl"></div>
+        )}
       </div>
+
+      {/* 안내 문구 */}
+      <p className="text-2xl text-gray-500 mb-12">
+        * 큐알은 이 창이 종료될과 동시에 사라집니다.
+      </p>
     </div>
   );
 }

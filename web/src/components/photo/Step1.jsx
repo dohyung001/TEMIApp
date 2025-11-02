@@ -1,6 +1,6 @@
 import BigCameraIcon from "../../assets/icons/big_camera.svg?react";
 import RightArrowIcon from "../../assets/icons/right_arrow.svg?react";
-
+import AngleButton from "../AngleButton";
 export default function Step1Intro({ onStart }) {
   return (
     <div className="flex flex-col items-center mt-5">
@@ -14,17 +14,9 @@ export default function Step1Intro({ onStart }) {
         <div class="w-[120px] h-[3px] rounded-full bg-gradient-to-l from-transparent via-gray-500 to-[#BEDBFF]" />
       </div>
 
-      <button
-        onClick={onStart}
-        className=" flex items-center gap-4 px-32 py-8 rounded-[28px] border-2 border-transparent 
-         bg-gradient-to-b from-[#3071FF] to-[#1D4ED8] 
-         text-white font-semibold text-6xl
-         shadow-[0_19px_42px_rgba(37,99,235,0.38)] 
-         hover:opacity-90 active:scale-95 transition"
-      >
+      <AngleButton onClick={onStart} icon={<RightArrowIcon />}>
         시작하기
-        <RightArrowIcon />
-      </button>
+      </AngleButton>
     </div>
   );
 }
