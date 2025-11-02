@@ -123,6 +123,7 @@ export default function HomePage() {
             터치하거나 음성으로 ‘테미야~’ 부른 후에 명령해주세요
           </p>
           <button onClick={() => navigate("/test")}>테스트</button>
+          <button onClick={() => navigate("/testsize")}>테스트사이즈</button>
         </div>
       </div>
     </div>
