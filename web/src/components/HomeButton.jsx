@@ -8,7 +8,7 @@ export default function HomeButton() {
     navigate("/");
   };
   return (
-    <button onClick={handleClick} className="">
+    <button onClick={handleClick}>
       <GoHomeIcon />
     </button>
   );

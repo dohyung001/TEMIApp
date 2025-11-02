@@ -33,7 +33,7 @@ export default function HomePage() {
       id: "chat",
       icon: <RobotIcon />,
       title: "테미랑 놀기",
-      path: "/chat",
+      path: "/play",
     },
     {
       id: "fortune",
