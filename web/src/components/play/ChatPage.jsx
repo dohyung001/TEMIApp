@@ -58,35 +58,80 @@ export default function VoiceChatPage() {
     recognitionInstance.continuous = false;
     recognitionInstance.interimResults = false;
 
+    // ⭐ 시작 이벤트
+    recognitionInstance.onstart = () => {
+      console.log("🎤 음성 인식 시작됨");
+    };
+
+    // ⭐ 소리 감지 이벤트
+    recognitionInstance.onsoundstart = () => {
+      console.log("🔊 소리 감지됨");
+    };
+
+    // ⭐ 음성 감지 이벤트
+    recognitionInstance.onspeechstart = () => {
+      console.log("🗣️ 음성 감지됨");
+    };
+
     recognitionInstance.onresult = async (event) => {
       const userText = event.results[0][0].transcript;
-      console.log("사용자:", userText);
+      console.log("✅ 인식 완료:", userText);
 
       setMessages((prev) => [...prev, { role: "user", text: userText }]);
       setIsListening(false);
-      setIsThinking(true); // ⭐ 생각 중 시작
+      setIsThinking(true);
 
-      // Gemini API 호출
       const response = await callGemini(userText);
 
-      setIsThinking(false); // ⭐ 생각 중 끝
+      setIsThinking(false);
       setMessages((prev) => [...prev, { role: "assistant", text: response }]);
 
-      // 테미가 말하기
       TemiBridge.speak(response);
     };
 
     recognitionInstance.onerror = (event) => {
-      console.error("음성 인식 오류:", event.error);
+      console.error("❌ 음성 인식 오류:", event.error);
+      console.error("오류 상세:", event);
+
+      // ⭐ 사용자에게 알림
+      let errorMessage = "음성 인식 오류가 발생했어요";
+
+      switch (event.error) {
+        case "no-speech":
+          errorMessage = "음성이 감지되지 않았어요. 다시 시도해주세요!";
+          break;
+        case "audio-capture":
+          errorMessage = "마이크에 접근할 수 없어요. 권한을 확인해주세요!";
+          break;
+        case "not-allowed":
+          errorMessage = "마이크 권한이 거부되었어요!";
+          break;
+        case "network":
+          errorMessage = "네트워크 오류가 발생했어요!";
+          break;
+      }
+
+      alert(errorMessage);
       setIsListening(false);
-      setIsThinking(false); // ⭐ 에러 시에도 끝내기
+      setIsThinking(false);
     };
 
     recognitionInstance.onend = () => {
+      console.log("🛑 음성 인식 종료됨");
       setIsListening(false);
     };
 
-    setRecognition(recognitionInstance);
+    // ⭐ 마이크 권한 미리 체크
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then(() => {
+        console.log("✅ 마이크 권한 있음");
+        setRecognition(recognitionInstance);
+      })
+      .catch((err) => {
+        console.error("❌ 마이크 권한 없음:", err);
+        alert("마이크 권한이 필요합니다!\n설정에서 권한을 허용해주세요.");
+      });
   }, []);
 
   const callGemini = async (userMessage) => {
@@ -130,8 +175,18 @@ export default function VoiceChatPage() {
 
   const startListening = () => {
     if (recognition) {
+      console.log("🎤 음성 인식 시작 시도...");
       setIsListening(true);
-      recognition.start();
+      try {
+        recognition.start();
+      } catch (error) {
+        console.error("❌ 시작 실패:", error);
+        setIsListening(false);
+        alert("음성 인식을 시작할 수 없어요: " + error.message);
+      }
+    } else {
+      console.error("❌ recognition 객체가 없음");
+      alert("음성 인식이 초기화되지 않았어요!");
     }
   };
 

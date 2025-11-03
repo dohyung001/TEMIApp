@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.webkit.*
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -19,7 +20,7 @@ class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
     private var robot: Robot? = null
 
     companion object {
-        private const val CAMERA_PERMISSION_CODE = 100
+        private const val PERMISSIONS_REQUEST_CODE = 100
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,8 +29,8 @@ class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
 
         Log.d("MainActivity", "Starting app...")
 
-        // 카메라 권한 요청
-        checkCameraPermission()
+        // ⭐ 모든 권한 요청
+        checkPermissions()
 
         initializeTemi()
         setupWebView()
@@ -47,15 +48,54 @@ class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
         })
     }
 
-    private fun checkCameraPermission() {
+    // ⭐ 권한 체크 함수 (카메라 + 마이크)
+    private fun checkPermissions() {
+        val permissionsToRequest = mutableListOf<String>()
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
             != PackageManager.PERMISSION_GRANTED
         ) {
+            permissionsToRequest.add(Manifest.permission.CAMERA)
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissionsToRequest.add(Manifest.permission.RECORD_AUDIO)
+        }
+
+        if (permissionsToRequest.isNotEmpty()) {
             ActivityCompat.requestPermissions(
                 this,
-                arrayOf(Manifest.permission.CAMERA),
-                CAMERA_PERMISSION_CODE
+                permissionsToRequest.toTypedArray(),
+                PERMISSIONS_REQUEST_CODE
             )
+        }
+    }
+
+    // ⭐ 권한 요청 결과 처리
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when (requestCode) {
+            PERMISSIONS_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() &&
+                    grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+                ) {
+                    Log.d("MainActivity", "✅ 모든 권한 허용됨")
+                } else {
+                    Log.e("MainActivity", "❌ 권한 거부됨")
+                    Toast.makeText(
+                        this,
+                        "카메라와 마이크 권한이 필요합니다",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
         }
     }
 
@@ -83,15 +123,19 @@ class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
         }
 
         WebView.setWebContentsDebuggingEnabled(true)
-
         webView.webViewClient = WebViewClient()
 
-        // 카메라 권한 자동 승인
+        // ⭐ 카메라 + 마이크 권한 자동 승인
         webView.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest?) {
                 request?.let {
-                    if (it.resources.contains(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) {
+                    // 비디오와 오디오 권한 모두 체크
+                    if (it.resources.any { resource ->
+                            resource == PermissionRequest.RESOURCE_VIDEO_CAPTURE ||
+                                    resource == PermissionRequest.RESOURCE_AUDIO_CAPTURE
+                        }) {
                         it.grant(it.resources)
+                        Log.d("MainActivity", "✅ WebView 미디어 권한 승인: ${it.resources.joinToString()}")
                     }
                 }
             }
