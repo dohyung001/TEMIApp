@@ -1,3 +1,5 @@
+// web/src/services/temiBridge.js
+
 class TemiBridgeService {
   constructor() {
     this.listeners = new Map();
@@ -15,6 +17,24 @@ class TemiBridgeService {
     } else {
       console.log("[Dev] speak:", text);
     }
+  }
+
+  // ========== 커스터마이징 (NEW) ==========
+
+  setCustomization(settings) {
+    if (window.Temi) {
+      window.Temi.setCustomization(JSON.stringify(settings));
+    } else {
+      console.log("[Dev] setCustomization:", settings);
+    }
+  }
+
+  getCustomization() {
+    if (window.Temi) {
+      const result = window.Temi.getCustomization();
+      return JSON.parse(result);
+    }
+    return null;
   }
 
   // ========== 이동 (Navigation) ==========
