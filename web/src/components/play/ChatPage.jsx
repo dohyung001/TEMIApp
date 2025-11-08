@@ -4,7 +4,7 @@ import MickIcon from "../../assets/icons/mick.svg?react";
 
 export default function VoiceChatPage() {
   const [isListening, setIsListening] = useState(false);
-  const [isThinking, setIsThinking] = useState(false); // ⭐ 추가
+  const [isThinking, setIsThinking] = useState(false);
   const [messages, setMessages] = useState([]);
   const [recognition, setRecognition] = useState(null);
 
@@ -49,7 +49,12 @@ export default function VoiceChatPage() {
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
+      console.error("❌ SpeechRecognition API 없음");
+      if (window.Temi) {
+        TemiBridge.showToast("음성 인식을 지원하지 않는 환경입니다");
+      } else {
+        alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
+      }
       return;
     }
 
@@ -58,17 +63,14 @@ export default function VoiceChatPage() {
     recognitionInstance.continuous = false;
     recognitionInstance.interimResults = false;
 
-    // ⭐ 시작 이벤트
     recognitionInstance.onstart = () => {
       console.log("🎤 음성 인식 시작됨");
     };
 
-    // ⭐ 소리 감지 이벤트
     recognitionInstance.onsoundstart = () => {
       console.log("🔊 소리 감지됨");
     };
 
-    // ⭐ 음성 감지 이벤트
     recognitionInstance.onspeechstart = () => {
       console.log("🗣️ 음성 감지됨");
     };
@@ -91,9 +93,7 @@ export default function VoiceChatPage() {
 
     recognitionInstance.onerror = (event) => {
       console.error("❌ 음성 인식 오류:", event.error);
-      console.error("오류 상세:", event);
 
-      // ⭐ 사용자에게 알림
       let errorMessage = "음성 인식 오류가 발생했어요";
 
       switch (event.error) {
@@ -111,7 +111,12 @@ export default function VoiceChatPage() {
           break;
       }
 
-      alert(errorMessage);
+      if (window.Temi) {
+        TemiBridge.showToast(errorMessage);
+      } else {
+        alert(errorMessage);
+      }
+
       setIsListening(false);
       setIsThinking(false);
     };
@@ -121,17 +126,41 @@ export default function VoiceChatPage() {
       setIsListening(false);
     };
 
-    // ⭐ 마이크 권한 미리 체크
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
-      .then(() => {
-        console.log("✅ 마이크 권한 있음");
+    // ✅ 마이크 권한 체크 개선
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      // 브라우저 환경 또는 https에서
+      navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .then(() => {
+          console.log("✅ 마이크 권한 있음");
+          setRecognition(recognitionInstance);
+        })
+        .catch((err) => {
+          console.error("❌ 마이크 권한 없음:", err);
+
+          // ✅ Temi 환경에서는 토스트 메시지
+          if (window.Temi) {
+            TemiBridge.showToast("마이크 권한을 허용해주세요!");
+            // file:// 프로토콜에서는 권한 체크 실패해도 recognition 객체는 생성
+            setRecognition(recognitionInstance);
+          } else {
+            alert(
+              "마이크 권한이 필요합니다!\n브라우저 설정에서 권한을 허용해주세요."
+            );
+          }
+        });
+    } else {
+      // ✅ MediaDevices API 없음 (file:// 프로토콜 등)
+      console.warn("⚠️ MediaDevices API 없음 - file:// 프로토콜일 수 있음");
+
+      // Temi 환경에서는 일단 recognition 객체 생성
+      if (window.Temi) {
+        console.log("🤖 Temi 환경: recognition 객체 생성");
         setRecognition(recognitionInstance);
-      })
-      .catch((err) => {
-        console.error("❌ 마이크 권한 없음:", err);
-        alert("마이크 권한이 필요합니다!\n설정에서 권한을 허용해주세요.");
-      });
+      } else {
+        alert("마이크 권한 확인이 불가능한 환경입니다.");
+      }
+    }
   }, []);
 
   const callGemini = async (userMessage) => {
@@ -182,23 +211,33 @@ export default function VoiceChatPage() {
       } catch (error) {
         console.error("❌ 시작 실패:", error);
         setIsListening(false);
-        alert("음성 인식을 시작할 수 없어요: " + error.message);
+
+        if (window.Temi) {
+          TemiBridge.showToast("음성 인식을 시작할 수 없어요");
+        } else {
+          alert("음성 인식을 시작할 수 없어요: " + error.message);
+        }
       }
     } else {
       console.error("❌ recognition 객체가 없음");
-      alert("음성 인식이 초기화되지 않았어요!");
+
+      if (window.Temi) {
+        TemiBridge.showToast("음성 인식이 초기화되지 않았어요");
+      } else {
+        alert("음성 인식이 초기화되지 않았어요!");
+      }
     }
   };
 
   return (
     <div>
       <div className="text-center mb-8">
-        <h1 className="text-5xl font-semibold mb-4"> 테미랑 대화하기</h1>
+        <h1 className="text-5xl font-semibold mb-4">테미랑 대화하기</h1>
       </div>
 
       {/* 대화 내용 + 상태 텍스트 통합 */}
       <div className="w-[80%] mx-auto rounded-3xl shadow-[0_12px_60px_rgba(0,0,0,0.12)]">
-        {/* 대화 영역 - 위쪽만 둥글게 */}
+        {/* 대화 영역 */}
         <div className="backdrop-blur-md rounded-t-3xl p-8 min-h-[400px] max-h-[500px] overflow-y-auto">
           {messages.length === 0 ? (
             <p className="text-center text-xl">
@@ -225,7 +264,6 @@ export default function VoiceChatPage() {
                 </div>
               ))}
 
-              {/* ⭐ 로딩 메시지 */}
               {isThinking && (
                 <div className="flex justify-start">
                   <div className="max-w-[80%] px-6 py-4 rounded-2xl text-lg shadow-[0_4px_20px_rgba(0,0,0,0.22)] bg-gray-100 text-gray-800">
@@ -237,7 +275,7 @@ export default function VoiceChatPage() {
           )}
         </div>
 
-        {/* 상태 텍스트 - 아래쪽 각지게 */}
+        {/* 상태 텍스트 */}
         <div className="rounded-b-3xl border-gray-200 px-8 py-4">
           <p className="text-xl text-slate-600 text-center">
             {isListening
@@ -253,7 +291,7 @@ export default function VoiceChatPage() {
       <div className="flex justify-center mt-4">
         <button
           onClick={startListening}
-          disabled={isListening || isThinking} // ⭐ 생각 중에도 비활성화
+          disabled={isListening || isThinking}
           className={`rounded-full p-10 shadow-2xl transition-all duration-100
             ${
               isListening

@@ -1,31 +1,65 @@
 // web/src/components/pages/DancePage.jsx
 
-import React, { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useRef, useEffect } from "react";
 import { TemiBridge } from "../../services/temiBridge";
 
 const DancePage = () => {
-  const navigate = useNavigate();
-  const [songs] = useState([
+  const [songs, setSongs] = useState([
     {
       id: 1,
       title: "FAMOUS",
       artist: "ALL DAY PROJECT",
-      cover: "/songs/famous-cover.jpg",
-      audio: "/songs/famous.mp3",
+      cover: null, // 나중에 로드
+      audio: "songs/famous.mp3",
     },
     {
       id: 2,
       title: "GO!",
       artist: "Unknown Artist",
-      cover: "/songs/famous-cover.jpg",
-      audio: "/songs/famous.mp3",
+      cover: null,
+      audio: "songs/famous.mp3",
     },
   ]);
 
   const [currentSong, setCurrentSong] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
+
+  // ✅ 컴포넌트 마운트 시 이미지 로드
+  useEffect(() => {
+    loadCovers();
+  }, []);
+
+  const loadCovers = async () => {
+    try {
+      // ✅ Temi 환경: Android에서 이미지 로드
+      if (window.Temi && window.Temi.loadImageAsBase64) {
+        const coverData = window.Temi.loadImageAsBase64("famous-cover.jpg");
+
+        if (coverData) {
+          setSongs((prevSongs) =>
+            prevSongs.map((song) => ({
+              ...song,
+              cover: coverData.startsWith("data:")
+                ? coverData
+                : `data:image/jpeg;base64,${coverData}`,
+            }))
+          );
+        }
+      }
+      // ✅ 개발 환경: 일반 경로
+      else {
+        setSongs((prevSongs) =>
+          prevSongs.map((song) => ({
+            ...song,
+            cover: "songs/famous-cover.jpg",
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("이미지 로드 실패:", error);
+    }
+  };
 
   const selectSong = (song) => {
     setCurrentSong(song);
@@ -37,37 +71,35 @@ const DancePage = () => {
   };
 
   const togglePlay = () => {
-    if (!currentSong) return;
+    if (!currentSong || !audioRef.current) return;
 
     if (isPlaying) {
-      audioRef.current?.pause();
+      audioRef.current.pause();
       TemiBridge.speak("음악을 일시정지합니다");
     } else {
-      audioRef.current?.play();
+      audioRef.current.play().catch((error) => {
+        console.error("재생 실패:", error);
+        TemiBridge.showToast("음악 재생에 실패했습니다");
+      });
       TemiBridge.speak(`${currentSong.title}을 재생합니다`);
-
-      // 춤 동작 (예시)
       startDanceMovement();
     }
     setIsPlaying(!isPlaying);
   };
 
   const startDanceMovement = () => {
-    // 간단한 춤 동작 예시
     const danceInterval = setInterval(() => {
-      if (TemiBridge.isNativeAvailable()) {
-        // 좌우로 고개 흔들기
+      if (isPlaying && TemiBridge.isNativeAvailable()) {
         TemiBridge.tiltBy(20, 3.0);
         setTimeout(() => {
-          TemiBridge.tiltBy(-40, 3.0);
+          if (isPlaying) TemiBridge.tiltBy(-40, 3.0);
         }, 300);
         setTimeout(() => {
-          TemiBridge.tiltBy(20, 3.0);
+          if (isPlaying) TemiBridge.tiltBy(20, 3.0);
         }, 600);
       }
     }, 1000);
 
-    // 음악이 멈추면 춤도 멈추기
     if (audioRef.current) {
       audioRef.current.onpause = () => {
         clearInterval(danceInterval);
@@ -96,84 +128,88 @@ const DancePage = () => {
     selectSong(songs[nextIndex]);
   };
 
+  // ✅ 이미지 fallback 컴포넌트
+  const AlbumCover = ({ src, alt, size = "200px" }) => {
+    if (!src) {
+      return (
+        <div
+          className="bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center"
+          style={{ width: size, height: size }}
+        >
+          <svg
+            className="w-20 h-20 text-white"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
+          </svg>
+        </div>
+      );
+    }
+
+    return (
+      <img
+        src={src}
+        alt={alt}
+        style={{ width: size, height: size }}
+        className="object-cover"
+        onError={(e) => {
+          e.target.style.display = "none";
+          const fallback = document.createElement("div");
+          fallback.className =
+            "w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center";
+          fallback.innerHTML = `
+            <svg class="w-20 h-20 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
+            </svg>
+          `;
+          e.target.parentElement.appendChild(fallback);
+        }}
+      />
+    );
+  };
+
   return (
-    <div className="p-8 flex flex-col items-center justify-center ">
+    <div className="p-8 flex flex-col items-center justify-center">
       <div className="max-w-5xl w-full">
-        {/* 헤더 */}
         <h1 className="text-5xl font-bold text-slate-800 text-center mb-12">
           춤추기
         </h1>
 
-        {/* 노래 선택이 안된 경우 */}
         {!currentSong ? (
-          <div className="">
-            <p className="text-2xl text-gray-500  text-center mb-8">
+          <div>
+            <p className="text-2xl text-gray-500 text-center mb-8">
               노래 하이라이트에 맞춰서 테미가 춤을 춰요
             </p>
 
-            {/* 노래 목록 */}
             <div className="grid grid-cols-2 gap-6">
               {songs.map((song) => (
                 <button
                   key={song.id}
                   onClick={() => selectSong(song)}
-                  className=" rounded-[50px] p-6 transition-all duration-300 transform border-2 border-slate-200 shadow-2xl flex flex-col justify-center items-center"
+                  className="rounded-[50px] p-6 transition-all duration-300 transform border-2 border-slate-200 shadow-2xl flex flex-col justify-center items-center"
                 >
-                  {/* 앨범 커버 이미지 */}
                   <div className="aspect-square rounded-xl mb-4 overflow-hidden">
-                    <img
-                      src={song.cover}
-                      alt={song.title}
-                      className=" w-[200px] h-[200px] object-cover"
-                      onError={(e) => {
-                        // 이미지 로드 실패 시 fallback
-                        e.target.style.display = "none";
-                        const fallback = document.createElement("div");
-                        fallback.className =
-                          "w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center";
-                        fallback.innerHTML = `
-                          <svg class="w-20 h-20 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
-                          </svg>
-                        `;
-                        e.target.parentElement.appendChild(fallback);
-                      }}
-                    />
+                    <AlbumCover src={song.cover} alt={song.title} />
                   </div>
-                  <h3 className="text-5xl font-bold  mb-1">{song.title}</h3>
+                  <h3 className="text-5xl font-bold mb-1">{song.title}</h3>
                   <p className="text-2xl text-gray-500">{song.artist}</p>
                 </button>
               ))}
             </div>
           </div>
         ) : (
-          /* 노래 재생 화면 */
           <div className="bg-white rounded-3xl shadow-2xl p-12">
-            {/* 앨범 커버 */}
             <div className="flex justify-center mb-8">
               <div className="w-80 h-80 rounded-3xl shadow-2xl overflow-hidden bg-slate-200">
-                <img
+                <AlbumCover
                   src={currentSong.cover}
                   alt={currentSong.title}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    // 이미지 로드 실패 시 fallback
-                    e.target.style.display = "none";
-                    const fallback = document.createElement("div");
-                    fallback.className =
-                      "w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center";
-                    fallback.innerHTML = `
-                      <svg class="w-40 h-40 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
-                      </svg>
-                    `;
-                    e.target.parentElement.appendChild(fallback);
-                  }}
+                  size="320px"
                 />
               </div>
             </div>
 
-            {/* 노래 정보 */}
             <div className="text-center mb-8">
               <h2 className="text-4xl font-bold text-slate-800 mb-2">
                 {currentSong.title}
@@ -181,9 +217,7 @@ const DancePage = () => {
               <p className="text-xl text-gray-600">{currentSong.artist}</p>
             </div>
 
-            {/* 컨트롤 버튼 */}
             <div className="flex items-center justify-center gap-6">
-              {/* 이전 곡 */}
               <button
                 onClick={goToPrevious}
                 className="w-16 h-16 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center transition-all"
@@ -197,7 +231,6 @@ const DancePage = () => {
                 </svg>
               </button>
 
-              {/* 재생/일시정지 */}
               <button
                 onClick={togglePlay}
                 className="w-24 h-24 bg-blue-700 hover:bg-blue-800 rounded-full flex items-center justify-center shadow-2xl transition-all transform hover:scale-110"
@@ -229,7 +262,6 @@ const DancePage = () => {
                 )}
               </button>
 
-              {/* 다음 곡 */}
               <button
                 onClick={goToNext}
                 className="w-16 h-16 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center transition-all"
@@ -244,7 +276,6 @@ const DancePage = () => {
               </button>
             </div>
 
-            {/* 노래 목록으로 돌아가기 */}
             <button
               onClick={() => {
                 if (audioRef.current) {
@@ -261,7 +292,6 @@ const DancePage = () => {
           </div>
         )}
 
-        {/* Hidden Audio Element */}
         {currentSong && (
           <audio ref={audioRef} src={currentSong.audio} preload="auto" />
         )}
