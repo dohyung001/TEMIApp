@@ -8,7 +8,7 @@ export default function Step2({ onCapture }) {
   const [isCapturing, setIsCapturing] = useState(false);
 
   const videoConstraints = {
-    width: 1400, // 7:6 비율
+    width: 1400, // 실제 촬영 해상도는 유지 (품질 보장)
     height: 1200,
     facingMode: "user",
   };
@@ -64,16 +64,16 @@ export default function Step2({ onCapture }) {
   };
 
   return (
-    <div className="flex flex-col items-center relative min-h-screen">
+    <div className="flex flex-col items-center justify-center relative min-h-screen py-8">
       {/* 안내 문구 */}
-      <div className="w-full text-center mb-4">
+      <div className="w-full text-center mb-6">
         <h2 className="text-3xl text-slate-600 font-medium">
           카메라 버튼을 누른 후 3초 후에 사진이 촬영됩니다
         </h2>
       </div>
 
-      {/* 카메라 프리뷰 */}
-      <div className="relative w-full max-w-[1400px]">
+      {/* 카메라 프리뷰 - 크기 축소 */}
+      <div className="relative w-full max-w-[900px] px-4">
         <div
           className="relative rounded-[24px] overflow-hidden shadow-2xl border-8 border-white w-full"
           style={{ aspectRatio: "7/6" }}
@@ -96,7 +96,7 @@ export default function Step2({ onCapture }) {
               key={countdown}
               className="absolute inset-0 flex items-center justify-center z-20"
             >
-              <span className="text-white text-[200px] font-bold animate-scaleFade">
+              <span className="text-white text-[160px] font-bold animate-scaleFade drop-shadow-2xl">
                 {countdown}
               </span>
             </div>
@@ -109,11 +109,11 @@ export default function Step2({ onCapture }) {
             onClick={handleCapture}
             disabled={isCapturing}
             className={`rounded-full bg-gradient-to-b from-[#3071FF] to-[#1D4ED8] 
-              shadow-2xl p-10 border-8 border-white 
+              shadow-2xl p-8 border-8 border-white 
               transition-transform hover:scale-105 active:scale-95
               ${isCapturing ? "opacity-50 cursor-not-allowed" : ""}`}
           >
-            <WhiteCameraIcon className="w-14 h-14" />
+            <WhiteCameraIcon className="w-12 h-12" />
           </button>
         </div>
       </div>

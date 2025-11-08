@@ -31,7 +31,14 @@ class TemiInterface(
         robot.speak(ttsRequest)
     }
 
-    // ========== Asset 이미지 로딩 (NEW) ==========
+    // ========== Asset 오디오 경로 (NEW) ==========
+
+    @JavascriptInterface
+    fun getAudioPath(filename: String): String {
+        return "file:///android_asset/songs/$filename"
+    }
+
+    // ========== Asset 이미지 로딩 (춤추기용) ==========
 
     @JavascriptInterface
     fun loadImageAsBase64(filename: String): String {
@@ -43,6 +50,38 @@ class TemiInterface(
             "data:image/jpeg;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
         } catch (e: Exception) {
             android.util.Log.e("TemiInterface", "이미지 로드 실패: $filename", e)
+            ""
+        }
+    }
+
+    // ========== 부스 이미지 로딩 (NEW) ==========
+
+    @JavascriptInterface
+    fun loadBoothImage(filename: String): String {
+        return try {
+            val inputStream = activity.assets.open("booths/$filename")
+            val bytes = inputStream.readBytes()
+            inputStream.close()
+
+            "data:image/jpeg;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
+        } catch (e: Exception) {
+            android.util.Log.e("TemiInterface", "부스 이미지 로드 실패: $filename", e)
+            ""
+        }
+    }
+
+    // ========== 사진촬영 테마 이미지 로딩 (NEW) ==========
+
+    @JavascriptInterface
+    fun loadThemeImage(filename: String): String {
+        return try {
+            val inputStream = activity.assets.open("img/$filename")
+            val bytes = inputStream.readBytes()
+            inputStream.close()
+
+            "data:image/png;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
+        } catch (e: Exception) {
+            android.util.Log.e("TemiInterface", "테마 이미지 로드 실패: $filename", e)
             ""
         }
     }

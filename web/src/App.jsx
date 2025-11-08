@@ -25,7 +25,7 @@ function App() {
         height: "1200px",
         transformOrigin: "top left",
         transform: "scale(0.6667)",
-        overflow: "hidden",
+        //overflow: "hidden",
       }}
     >
       <RouterProvider router={router} />

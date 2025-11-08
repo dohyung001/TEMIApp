@@ -129,22 +129,6 @@ export default function Step5({ finalPhoto, onReset, onGoHome }) {
       <p className="text-2xl text-gray-500 mb-12">
         * QR코드는 이 창이 종료될 때까지 유효합니다.
       </p>
-
-      {/* 버튼 */}
-      <div className="flex gap-6">
-        <button
-          onClick={onReset}
-          className="px-12 py-5 rounded-full bg-gray-500 hover:bg-gray-600 text-white font-bold text-2xl shadow-xl transition-all"
-        >
-          다시 찍기
-        </button>
-        <button
-          onClick={onGoHome}
-          className="px-12 py-5 rounded-full bg-green-500 hover:bg-green-600 text-white font-bold text-2xl shadow-xl transition-all"
-        >
-          홈으로
-        </button>
-      </div>
     </div>
   );
 }

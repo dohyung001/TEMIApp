@@ -5,7 +5,13 @@ import MickIcon from "../../assets/icons/mick.svg?react";
 export default function VoiceChatPage() {
   const [isListening, setIsListening] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
-  const [messages, setMessages] = useState([]);
+  // ✅ 초기 인사말을 미리 세팅
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      text: "안녕하세요! TEMI입니다. 궁금하신 점을 말씀해주세요.",
+    },
+  ]);
   const [recognition, setRecognition] = useState(null);
 
   const TEMI_SYSTEM_PROMPT = `당신은 테미(Temi)라는 친근한 안내 로봇입니다.
@@ -237,42 +243,36 @@ export default function VoiceChatPage() {
 
       {/* 대화 내용 + 상태 텍스트 통합 */}
       <div className="w-[80%] mx-auto rounded-3xl shadow-[0_12px_60px_rgba(0,0,0,0.12)]">
-        {/* 대화 영역 */}
-        <div className="backdrop-blur-md rounded-t-3xl p-8 min-h-[400px] max-h-[500px] overflow-y-auto">
-          {messages.length === 0 ? (
-            <p className="text-center text-xl">
-              아직 대화가 없어요. 버튼을 눌러 시작하세요!
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {messages.map((msg, idx) => (
+        {/* 대화 영역 - ✅ 고정 높이 700px */}
+        <div className="backdrop-blur-md rounded-t-3xl p-8 h-[700px] overflow-y-auto">
+          <div className="space-y-4">
+            {messages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`flex ${
+                  msg.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
                 <div
-                  key={idx}
-                  className={`flex ${
-                    msg.role === "user" ? "justify-end" : "justify-start"
+                  className={`max-w-[80%] px-6 py-4 rounded-2xl text-2xl shadow-[0_4px_20px_rgba(0,0,0,0.22)] ${
+                    msg.role === "user"
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-100 text-gray-800"
                   }`}
                 >
-                  <div
-                    className={`max-w-[80%] px-6 py-4 rounded-2xl text-lg shadow-[0_4px_20px_rgba(0,0,0,0.22)] ${
-                      msg.role === "user"
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {msg.text}
-                  </div>
+                  {msg.text}
                 </div>
-              ))}
+              </div>
+            ))}
 
-              {isThinking && (
-                <div className="flex justify-start">
-                  <div className="max-w-[80%] px-6 py-4 rounded-2xl text-lg shadow-[0_4px_20px_rgba(0,0,0,0.22)] bg-gray-100 text-gray-800">
-                    <span className="animate-pulse">생각 중...</span>
-                  </div>
+            {isThinking && (
+              <div className="flex justify-start">
+                <div className="max-w-[80%] px-6 py-4 rounded-2xl text-lg shadow-[0_4px_20px_rgba(0,0,0,0.22)] bg-gray-100 text-gray-800">
+                  <span className="animate-pulse">생각 중...</span>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 상태 텍스트 */}

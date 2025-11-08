@@ -1,67 +1,119 @@
 // web/src/components/pages/DancePage.jsx
+// 테미 로봇이 음악에 맞춰 춤을 추는 페이지
+// 상태 관리 + 비즈니스 로직 + 렌더링 조합
 
 import React, { useState, useRef, useEffect } from "react";
 import { TemiBridge } from "../../services/temiBridge";
+import Step1 from "../dance/Step1";
+import Step2 from "../dance/Step2";
 
 const DancePage = () => {
+  // ========== State 관리 ==========
+
+  // 노래 목록 (앨범 커버 이미지 + 오디오 파일)
   const [songs, setSongs] = useState([
     {
       id: 1,
       title: "FAMOUS",
       artist: "ALL DAY PROJECT",
-      cover: null, // 나중에 로드
-      audio: "songs/famous.mp3",
+      cover: null, // Base64 이미지 데이터 (로딩 후)
+      audio: null, // 오디오 파일 경로 (로딩 후)
     },
     {
       id: 2,
       title: "GO!",
       artist: "Unknown Artist",
       cover: null,
-      audio: "songs/famous.mp3",
+      audio: null,
     },
   ]);
 
+  // 현재 선택된 노래
   const [currentSong, setCurrentSong] = useState(null);
+
+  // 음악 재생 상태
   const [isPlaying, setIsPlaying] = useState(false);
+
+  // HTML5 Audio 태그 참조
   const audioRef = useRef(null);
 
-  // ✅ 컴포넌트 마운트 시 이미지 로드
+  // 춤 동작 interval 참조 (cleanup을 위해)
+  const danceIntervalRef = useRef(null);
+
+  // ========== 초기화 ==========
+
+  // 컴포넌트 마운트 시 이미지 + 오디오 로드
   useEffect(() => {
-    loadCovers();
+    loadAssets();
   }, []);
 
-  const loadCovers = async () => {
-    try {
-      // ✅ Temi 환경: Android에서 이미지 로드
-      if (window.Temi && window.Temi.loadImageAsBase64) {
-        const coverData = window.Temi.loadImageAsBase64("famous-cover.jpg");
+  // 컴포넌트 언마운트 시 정리 (페이지 벗어날 때)
+  useEffect(() => {
+    return () => {
+      // 춤 동작 interval 정리
+      if (danceIntervalRef.current) {
+        clearInterval(danceIntervalRef.current);
+        danceIntervalRef.current = null;
+      }
+      // 음악 정지
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      // 테미 춤 동작 중지 + 고개 원위치
+      if (TemiBridge.isNativeAvailable()) {
+        TemiBridge.tiltHead(0);
+      }
+      console.log("🛑 DancePage 정리: 음악 및 춤 중단");
+    };
+  }, []);
 
-        if (coverData) {
+  /**
+   * 이미지와 오디오 파일을 로드하는 함수
+   * - Temi 환경: Android 네이티브 함수로 Base64/경로 가져오기
+   * - 웹 환경: 일반 상대 경로 사용
+   */
+  const loadAssets = async () => {
+    try {
+      if (window.Temi) {
+        // Temi 환경: Android에서 로드
+        const coverData = window.Temi.loadImageAsBase64("famous-cover.jpg");
+        const audioPath = window.Temi.getAudioPath("famous.mp3");
+
+        if (coverData && audioPath) {
           setSongs((prevSongs) =>
             prevSongs.map((song) => ({
               ...song,
               cover: coverData.startsWith("data:")
                 ? coverData
                 : `data:image/jpeg;base64,${coverData}`,
+              audio: audioPath,
             }))
           );
         }
-      }
-      // ✅ 개발 환경: 일반 경로
-      else {
+      } else {
+        // 개발 환경: 일반 경로
         setSongs((prevSongs) =>
           prevSongs.map((song) => ({
             ...song,
-            cover: "songs/famous-cover.jpg",
+            cover: "/songs/famous-cover.jpg",
+            audio: "/songs/famous.mp3",
           }))
         );
       }
     } catch (error) {
-      console.error("이미지 로드 실패:", error);
+      console.error("에셋 로드 실패:", error);
     }
   };
 
-  const selectSong = (song) => {
+  // ========== 이벤트 핸들러 ==========
+
+  /**
+   * 노래 선택 함수
+   * - 현재 재생중인 음악 정지
+   * - 선택한 노래로 변경
+   */
+  const handleSelectSong = (song) => {
     setCurrentSong(song);
     setIsPlaying(false);
     if (audioRef.current) {
@@ -70,7 +122,12 @@ const DancePage = () => {
     }
   };
 
-  const togglePlay = () => {
+  /**
+   * 재생/일시정지 토글 함수
+   * - 재생 시: 테미 음성 안내 + 춤 동작 시작
+   * - 일시정지 시: 테미 음성 안내
+   */
+  const handleTogglePlay = () => {
     if (!currentSong || !audioRef.current) return;
 
     if (isPlaying) {
@@ -87,211 +144,93 @@ const DancePage = () => {
     setIsPlaying(!isPlaying);
   };
 
+  /**
+   * 노래 처음부터 다시 재생
+   * - 재생 위치를 0으로 리셋
+   */
+  const handleRestart = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      TemiBridge.speak("처음부터 다시 재생합니다");
+    }
+  };
+
+  // ========== 테미 로봇 제어 ==========
+
+  /**
+   * 테미 춤 동작 함수
+   * - 1초마다 좌우로 고개 흔들기 (tiltBy)
+   * - 음악 종료/일시정지 시 동작 중지
+   */
   const startDanceMovement = () => {
-    const danceInterval = setInterval(() => {
+    // 기존 interval 정리
+    if (danceIntervalRef.current) {
+      clearInterval(danceIntervalRef.current);
+    }
+
+    // 1초마다 춤 동작 반복
+    danceIntervalRef.current = setInterval(() => {
       if (isPlaying && TemiBridge.isNativeAvailable()) {
+        // 오른쪽으로 20도 기울이기
         TemiBridge.tiltBy(20, 3.0);
         setTimeout(() => {
+          // 왼쪽으로 40도 기울이기 (반대 방향)
           if (isPlaying) TemiBridge.tiltBy(-40, 3.0);
         }, 300);
         setTimeout(() => {
+          // 다시 중앙으로 20도 (원위치)
           if (isPlaying) TemiBridge.tiltBy(20, 3.0);
         }, 600);
       }
     }, 1000);
 
+    // 음악 이벤트 리스너 등록
     if (audioRef.current) {
+      // 일시정지 시: 춤 동작 중지 + 고개 원위치
       audioRef.current.onpause = () => {
-        clearInterval(danceInterval);
+        if (danceIntervalRef.current) {
+          clearInterval(danceIntervalRef.current);
+          danceIntervalRef.current = null;
+        }
         TemiBridge.tiltHead(0);
       };
+      // 음악 종료 시: 춤 동작 중지 + 고개 원위치 + 재생 상태 변경
       audioRef.current.onended = () => {
-        clearInterval(danceInterval);
+        if (danceIntervalRef.current) {
+          clearInterval(danceIntervalRef.current);
+          danceIntervalRef.current = null;
+        }
         TemiBridge.tiltHead(0);
         setIsPlaying(false);
       };
     }
   };
 
-  const goToPrevious = () => {
-    if (!currentSong) return;
-    const currentIndex = songs.findIndex((s) => s.id === currentSong.id);
-    const prevIndex =
-      currentIndex - 1 < 0 ? songs.length - 1 : currentIndex - 1;
-    selectSong(songs[prevIndex]);
-  };
-
-  const goToNext = () => {
-    if (!currentSong) return;
-    const currentIndex = songs.findIndex((s) => s.id === currentSong.id);
-    const nextIndex = (currentIndex + 1) % songs.length;
-    selectSong(songs[nextIndex]);
-  };
-
-  // ✅ 이미지 fallback 컴포넌트
-  const AlbumCover = ({ src, alt, size = "200px" }) => {
-    if (!src) {
-      return (
-        <div
-          className="bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center"
-          style={{ width: size, height: size }}
-        >
-          <svg
-            className="w-20 h-20 text-white"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
-          </svg>
-        </div>
-      );
-    }
-
-    return (
-      <img
-        src={src}
-        alt={alt}
-        style={{ width: size, height: size }}
-        className="object-cover"
-        onError={(e) => {
-          e.target.style.display = "none";
-          const fallback = document.createElement("div");
-          fallback.className =
-            "w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center";
-          fallback.innerHTML = `
-            <svg class="w-20 h-20 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
-            </svg>
-          `;
-          e.target.parentElement.appendChild(fallback);
-        }}
-      />
-    );
-  };
+  // ========== 렌더링 ==========
 
   return (
     <div className="p-8 flex flex-col items-center justify-center">
       <div className="max-w-5xl w-full">
-        <h1 className="text-5xl font-bold text-slate-800 text-center mb-12">
+        {/* 페이지 제목 */}
+        <h1 className="text-6xl font-bold text-slate-800 text-center mb-12">
           춤추기
         </h1>
 
+        {/* 조건부 렌더링: 노래 선택 전 vs 선택 후 */}
         {!currentSong ? (
-          <div>
-            <p className="text-2xl text-gray-500 text-center mb-8">
-              노래 하이라이트에 맞춰서 테미가 춤을 춰요
-            </p>
-
-            <div className="grid grid-cols-2 gap-6">
-              {songs.map((song) => (
-                <button
-                  key={song.id}
-                  onClick={() => selectSong(song)}
-                  className="rounded-[50px] p-6 transition-all duration-300 transform border-2 border-slate-200 shadow-2xl flex flex-col justify-center items-center"
-                >
-                  <div className="aspect-square rounded-xl mb-4 overflow-hidden">
-                    <AlbumCover src={song.cover} alt={song.title} />
-                  </div>
-                  <h3 className="text-5xl font-bold mb-1">{song.title}</h3>
-                  <p className="text-2xl text-gray-500">{song.artist}</p>
-                </button>
-              ))}
-            </div>
-          </div>
+          // Step1: 노래 선택 화면
+          <Step1 songs={songs} onSelectSong={handleSelectSong} />
         ) : (
-          <div className="bg-white rounded-3xl shadow-2xl p-12">
-            <div className="flex justify-center mb-8">
-              <div className="w-80 h-80 rounded-3xl shadow-2xl overflow-hidden bg-slate-200">
-                <AlbumCover
-                  src={currentSong.cover}
-                  alt={currentSong.title}
-                  size="320px"
-                />
-              </div>
-            </div>
-
-            <div className="text-center mb-8">
-              <h2 className="text-4xl font-bold text-slate-800 mb-2">
-                {currentSong.title}
-              </h2>
-              <p className="text-xl text-gray-600">{currentSong.artist}</p>
-            </div>
-
-            <div className="flex items-center justify-center gap-6">
-              <button
-                onClick={goToPrevious}
-                className="w-16 h-16 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center transition-all"
-              >
-                <svg
-                  className="w-8 h-8 text-slate-700"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z" />
-                </svg>
-              </button>
-
-              <button
-                onClick={togglePlay}
-                className="w-24 h-24 bg-blue-700 hover:bg-blue-800 rounded-full flex items-center justify-center shadow-2xl transition-all transform hover:scale-110"
-              >
-                {isPlaying ? (
-                  <svg
-                    className="w-12 h-12 text-white"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    className="w-12 h-12 text-white ml-1"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                )}
-              </button>
-
-              <button
-                onClick={goToNext}
-                className="w-16 h-16 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center transition-all"
-              >
-                <svg
-                  className="w-8 h-8 text-slate-700"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.798l-5.445-3.63z" />
-                </svg>
-              </button>
-            </div>
-
-            <button
-              onClick={() => {
-                if (audioRef.current) {
-                  audioRef.current.pause();
-                }
-                setIsPlaying(false);
-                setCurrentSong(null);
-                TemiBridge.tiltHead(0);
-              }}
-              className="mt-8 w-full py-4 bg-slate-100 hover:bg-slate-200 rounded-2xl text-lg font-semibold text-slate-700 transition-all"
-            >
-              노래 목록으로 돌아가기
-            </button>
-          </div>
+          // Step2: 재생 화면
+          <Step2
+            currentSong={currentSong}
+            isPlaying={isPlaying}
+            onTogglePlay={handleTogglePlay}
+            onRestart={handleRestart}
+          />
         )}
 
+        {/* HTML5 Audio 태그 (숨김) - 선택된 노래가 있을 때만 렌더링 */}
         {currentSong && (
           <audio ref={audioRef} src={currentSong.audio} preload="auto" />
         )}
