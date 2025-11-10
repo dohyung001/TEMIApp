@@ -113,32 +113,38 @@ class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
-            databaseEnabled = true  // ✅ 추가
+            databaseEnabled = true
             allowFileAccess = true
             allowFileAccessFromFileURLs = true
             allowUniversalAccessFromFileURLs = true
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             mediaPlaybackRequiresUserGesture = false
-
-            // ✅ CORS 우회를 위한 추가 설정
             cacheMode = WebSettings.LOAD_NO_CACHE
             setGeolocationEnabled(true)
+
+            // ✅✅✅ 추가: 미디어 스트림 허용
+            javaScriptCanOpenWindowsAutomatically = true
         }
 
         WebView.setWebContentsDebuggingEnabled(true)
         webView.webViewClient = WebViewClient()
 
-        // ✅ 권한 요청 핸들러
         webView.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest?) {
                 request?.let {
-                    Log.d("MainActivity", "권한 요청: ${it.resources.joinToString()}")
-                    // 모든 권한 자동 승인
-                    it.grant(it.resources)
+                    Log.d("MainActivity", "✅ 권한 요청 받음: ${it.resources.joinToString()}")
+                    runOnUiThread {
+                        it.grant(it.resources)
+                        Log.d("MainActivity", "✅ 권한 승인함")
+                    }
                 }
             }
 
-            // ✅ 콘솔 로그 표시
+            // ✅✅✅ 추가: 에러 로그
+            override fun onPermissionRequestCanceled(request: PermissionRequest?) {
+                Log.e("MainActivity", "❌ 권한 요청 취소됨")
+            }
+
             override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                 consoleMessage?.let {
                     Log.d("WebView-Console", "${it.message()} -- From line ${it.lineNumber()} of ${it.sourceId()}")

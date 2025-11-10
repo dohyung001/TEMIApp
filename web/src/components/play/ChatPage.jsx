@@ -5,7 +5,6 @@ import MickIcon from "../../assets/icons/mick.svg?react";
 export default function VoiceChatPage() {
   const [isListening, setIsListening] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
-  // ✅ 초기 인사말을 미리 세팅
   const [messages, setMessages] = useState([
     {
       role: "assistant",
@@ -100,6 +99,24 @@ export default function VoiceChatPage() {
     recognitionInstance.onerror = (event) => {
       console.error("❌ 음성 인식 오류:", event.error);
 
+      // ✅✅✅ Temi 환경에서 특정 에러는 무시
+      if (window.Temi) {
+        if (event.error === "audio-capture" || event.error === "not-allowed") {
+          console.warn("⚠️ Temi 환경: 권한 관련 에러 무시하고 계속 진행");
+          setIsListening(false);
+          return; // 에러 메시지 표시 안함
+        }
+
+        // no-speech 에러만 사용자에게 알림
+        if (event.error === "no-speech") {
+          TemiBridge.showToast("음성이 감지되지 않았어요. 다시 시도해주세요!");
+          setIsListening(false);
+          setIsThinking(false);
+          return;
+        }
+      }
+
+      // 브라우저 환경에서는 모든 에러 표시
       let errorMessage = "음성 인식 오류가 발생했어요";
 
       switch (event.error) {
@@ -132,38 +149,27 @@ export default function VoiceChatPage() {
       setIsListening(false);
     };
 
-    // ✅ 마이크 권한 체크 개선
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      // 브라우저 환경 또는 https에서
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then(() => {
-          console.log("✅ 마이크 권한 있음");
-          setRecognition(recognitionInstance);
-        })
-        .catch((err) => {
-          console.error("❌ 마이크 권한 없음:", err);
-
-          // ✅ Temi 환경에서는 토스트 메시지
-          if (window.Temi) {
-            TemiBridge.showToast("마이크 권한을 허용해주세요!");
-            // file:// 프로토콜에서는 권한 체크 실패해도 recognition 객체는 생성
+    // ✅✅✅ Temi 환경에서는 권한 체크 완전히 스킵
+    if (window.Temi) {
+      console.log("🤖 Temi 환경: recognition 객체 바로 생성 (권한 체크 스킵)");
+      setRecognition(recognitionInstance);
+    } else {
+      // 브라우저 환경에서만 권한 체크
+      if (navigator.mediaDevices?.getUserMedia) {
+        navigator.mediaDevices
+          .getUserMedia({ audio: true })
+          .then(() => {
+            console.log("✅ 브라우저: 마이크 권한 있음");
             setRecognition(recognitionInstance);
-          } else {
+          })
+          .catch((err) => {
+            console.error("❌ 브라우저: 마이크 권한 없음:", err);
             alert(
               "마이크 권한이 필요합니다!\n브라우저 설정에서 권한을 허용해주세요."
             );
-          }
-        });
-    } else {
-      // ✅ MediaDevices API 없음 (file:// 프로토콜 등)
-      console.warn("⚠️ MediaDevices API 없음 - file:// 프로토콜일 수 있음");
-
-      // Temi 환경에서는 일단 recognition 객체 생성
-      if (window.Temi) {
-        console.log("🤖 Temi 환경: recognition 객체 생성");
-        setRecognition(recognitionInstance);
+          });
       } else {
+        console.warn("⚠️ MediaDevices API 없음");
         alert("마이크 권한 확인이 불가능한 환경입니다.");
       }
     }
@@ -218,6 +224,12 @@ export default function VoiceChatPage() {
         console.error("❌ 시작 실패:", error);
         setIsListening(false);
 
+        // ✅ Temi 환경에서 "already started" 에러는 무시
+        if (window.Temi && error.message.includes("already started")) {
+          console.warn("⚠️ Temi 환경: 이미 시작됨 에러 무시");
+          return;
+        }
+
         if (window.Temi) {
           TemiBridge.showToast("음성 인식을 시작할 수 없어요");
         } else {
@@ -243,7 +255,7 @@ export default function VoiceChatPage() {
 
       {/* 대화 내용 + 상태 텍스트 통합 */}
       <div className="w-[80%] mx-auto rounded-3xl shadow-[0_12px_60px_rgba(0,0,0,0.12)]">
-        {/* 대화 영역 - ✅ 고정 높이 700px */}
+        {/* 대화 영역 */}
         <div className="backdrop-blur-md rounded-t-3xl p-8 h-[700px] overflow-y-auto">
           <div className="space-y-4">
             {messages.map((msg, idx) => (
@@ -267,7 +279,7 @@ export default function VoiceChatPage() {
 
             {isThinking && (
               <div className="flex justify-start">
-                <div className="max-w-[80%] px-6 py-4 rounded-2xl text-lg shadow-[0_4px_20px_rgba(0,0,0,0.22)] bg-gray-100 text-gray-800">
+                <div className="max-w-[80%] px-6 py-4 rounded-2xl text-2xl shadow-[0_4px_20px_rgba(0,0,0,0.22)] bg-gray-100 text-gray-800">
                   <span className="animate-pulse">생각 중...</span>
                 </div>
               </div>
