@@ -3,8 +3,8 @@
 
 import React from "react";
 import AlbumCover from "./AlbumCover";
-import PlayIcon from "../../assets/icons/play.svg?react";
-import PauseIcon from "../../assets/icons/pause.svg?react";
+import PlayIcon from "../../../assets/icons/play.svg?react";
+import PauseIcon from "../../../assets/icons/pause.svg?react";
 /**
  * Step2: 재생 화면
  * @param {Object} currentSong - 현재 재생중인 노래 객체

@@ -4,8 +4,8 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { TemiBridge } from "../../services/temiBridge";
-import Step1 from "../dance/Step1";
-import Step2 from "../dance/Step2";
+import Step1 from "./dance/Step1";
+import Step2 from "./dance/Step2";
 
 const DancePage = () => {
   // ========== State 관리 ==========
