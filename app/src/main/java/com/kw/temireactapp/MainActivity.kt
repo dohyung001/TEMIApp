@@ -29,13 +29,10 @@ class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
 
         Log.d("MainActivity", "Starting app...")
 
-        // ⭐ 모든 권한 요청
         checkPermissions()
-
         initializeTemi()
         setupWebView()
 
-        // 뒤로가기 처리
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (webView.canGoBack()) {
@@ -48,7 +45,6 @@ class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
         })
     }
 
-    // ⭐ 권한 체크 함수 (카메라 + 마이크)
     private fun checkPermissions() {
         val permissionsToRequest = mutableListOf<String>()
 
@@ -64,6 +60,7 @@ class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
             permissionsToRequest.add(Manifest.permission.RECORD_AUDIO)
         }
 
+        // ✅ INTERNET 권한도 추가 (런타임 불필요, Manifest만)
         if (permissionsToRequest.isNotEmpty()) {
             ActivityCompat.requestPermissions(
                 this,
@@ -73,7 +70,6 @@ class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
         }
     }
 
-    // ⭐ 권한 요청 결과 처리
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -87,6 +83,8 @@ class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
                     grantResults.all { it == PackageManager.PERMISSION_GRANTED }
                 ) {
                     Log.d("MainActivity", "✅ 모든 권한 허용됨")
+                    // ✅ 권한 승인 후 페이지 새로고침
+                    webView.reload()
                 } else {
                     Log.e("MainActivity", "❌ 권한 거부됨")
                     Toast.makeText(
@@ -115,29 +113,43 @@ class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
+            databaseEnabled = true
             allowFileAccess = true
             allowFileAccessFromFileURLs = true
             allowUniversalAccessFromFileURLs = true
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             mediaPlaybackRequiresUserGesture = false
+            cacheMode = WebSettings.LOAD_NO_CACHE
+            setGeolocationEnabled(true)
+
+            // ✅✅✅ 추가: 미디어 스트림 허용
+            javaScriptCanOpenWindowsAutomatically = true
         }
 
         WebView.setWebContentsDebuggingEnabled(true)
         webView.webViewClient = WebViewClient()
 
-        // ⭐ 카메라 + 마이크 권한 자동 승인
         webView.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest?) {
                 request?.let {
-                    // 비디오와 오디오 권한 모두 체크
-                    if (it.resources.any { resource ->
-                            resource == PermissionRequest.RESOURCE_VIDEO_CAPTURE ||
-                                    resource == PermissionRequest.RESOURCE_AUDIO_CAPTURE
-                        }) {
+                    Log.d("MainActivity", "✅ 권한 요청 받음: ${it.resources.joinToString()}")
+                    runOnUiThread {
                         it.grant(it.resources)
-                        Log.d("MainActivity", "✅ WebView 미디어 권한 승인: ${it.resources.joinToString()}")
+                        Log.d("MainActivity", "✅ 권한 승인함")
                     }
                 }
+            }
+
+            // ✅✅✅ 추가: 에러 로그
+            override fun onPermissionRequestCanceled(request: PermissionRequest?) {
+                Log.e("MainActivity", "❌ 권한 요청 취소됨")
+            }
+
+            override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                consoleMessage?.let {
+                    Log.d("WebView-Console", "${it.message()} -- From line ${it.lineNumber()} of ${it.sourceId()}")
+                }
+                return true
             }
         }
 
