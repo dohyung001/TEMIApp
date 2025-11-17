@@ -3,17 +3,16 @@
 class TemiBridgeService {
   constructor() {
     this.listeners = new Map();
-    this.assetCache = new Map(); // 에셋 캐시
+    this.assetCache = new Map();
 
     window.onTemiLocationStatus = (data) => {
       this.emit("locationStatus", data);
     };
   }
 
-  // ========== Asset 로딩 (NEW) ==========
+  // ========== Asset 로딩 ==========
 
   loadAsset(path) {
-    // 캐시 확인
     if (this.assetCache.has(path)) {
       return Promise.resolve(this.assetCache.get(path));
     }
@@ -32,7 +31,6 @@ class TemiBridgeService {
           reject(error);
         }
       } else {
-        // 개발 환경: 일반 경로 반환
         resolve(`/${path}`);
       }
     });
@@ -67,16 +65,16 @@ class TemiBridgeService {
     if (window.Temi && window.Temi.checkAssetExists) {
       return window.Temi.checkAssetExists(path);
     }
-    return true; // 개발 환경에서는 true
+    return true;
   }
 
-  // ========== 권한 확인 (NEW) ==========
+  // ========== 권한 확인 ==========
 
   hasPermission(permission) {
     if (window.Temi && window.Temi.hasPermission) {
       return window.Temi.hasPermission(permission);
     }
-    return true; // 개발 환경에서는 true
+    return true;
   }
 
   // ========== 음성 (Speech) ==========
@@ -86,6 +84,24 @@ class TemiBridgeService {
       window.Temi.speak(text);
     } else {
       console.log("[Dev] speak:", text);
+    }
+  }
+
+  // ========== 음성 인식 (Native) ==========
+
+  startSpeechRecognition() {
+    if (window.Temi) {
+      window.Temi.startSpeechRecognition();
+    } else {
+      console.log("[Dev] startSpeechRecognition");
+    }
+  }
+
+  stopSpeechRecognition() {
+    if (window.Temi) {
+      window.Temi.stopSpeechRecognition();
+    } else {
+      console.log("[Dev] stopSpeechRecognition");
     }
   }
 

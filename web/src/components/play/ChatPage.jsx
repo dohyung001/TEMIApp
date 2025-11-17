@@ -11,7 +11,6 @@ export default function VoiceChatPage() {
       text: "안녕하세요! TEMI입니다. 궁금하신 점을 말씀해주세요.",
     },
   ]);
-  const [recognition, setRecognition] = useState(null);
 
   const TEMI_SYSTEM_PROMPT = `당신은 테미(Temi)라는 친근한 안내 로봇입니다.
 
@@ -49,46 +48,34 @@ export default function VoiceChatPage() {
   - 이모지 사용 가능 (😊, 💡, 🎓, 🎉 등)
   - 모르는 건 솔직히 "잘 모르겠어요"라고 답변`;
 
+  // ✅ Native 음성 인식 콜백 등록
   useEffect(() => {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+    console.log("🎤 음성 인식 콜백 등록");
 
-    if (!SpeechRecognition) {
-      console.error("❌ SpeechRecognition API 없음");
-      if (window.Temi) {
-        TemiBridge.showToast("음성 인식을 지원하지 않는 환경입니다");
-      } else {
-        alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
-      }
-      return;
-    }
-
-    const recognitionInstance = new SpeechRecognition();
-    recognitionInstance.lang = "ko-KR";
-    recognitionInstance.continuous = false;
-    recognitionInstance.interimResults = false;
-
-    recognitionInstance.onstart = () => {
-      console.log("🎤 음성 인식 시작됨");
+    // 음성 인식 준비 완료
+    window.onSpeechReady = () => {
+      console.log("✅ 음성 인식 준비 완료");
     };
 
-    recognitionInstance.onsoundstart = () => {
-      console.log("🔊 소리 감지됨");
+    // 음성 감지 시작
+    window.onSpeechStart = () => {
+      console.log("🗣️ 음성 감지 시작");
     };
 
-    recognitionInstance.onspeechstart = () => {
-      console.log("🗣️ 음성 감지됨");
+    // 음성 입력 종료
+    window.onSpeechEnd = () => {
+      console.log("🛑 음성 입력 종료");
     };
 
-    recognitionInstance.onresult = async (event) => {
-      const userText = event.results[0][0].transcript;
-      console.log("✅ 인식 완료:", userText);
+    // 음성 인식 결과
+    window.onSpeechResult = async (text) => {
+      console.log("✅ 인식 결과:", text);
 
-      setMessages((prev) => [...prev, { role: "user", text: userText }]);
+      setMessages((prev) => [...prev, { role: "user", text }]);
       setIsListening(false);
       setIsThinking(true);
 
-      const response = await callGemini(userText);
+      const response = await callGemini(text);
 
       setIsThinking(false);
       setMessages((prev) => [...prev, { role: "assistant", text: response }]);
@@ -96,41 +83,29 @@ export default function VoiceChatPage() {
       TemiBridge.speak(response);
     };
 
-    recognitionInstance.onerror = (event) => {
-      console.error("❌ 음성 인식 오류:", event.error);
+    // 음성 인식 오류
+    window.onSpeechError = (error) => {
+      console.error("❌ 음성 인식 오류:", error);
 
-      // ✅✅✅ Temi 환경에서 특정 에러는 무시
-      if (window.Temi) {
-        if (event.error === "audio-capture" || event.error === "not-allowed") {
-          console.warn("⚠️ Temi 환경: 권한 관련 에러 무시하고 계속 진행");
-          setIsListening(false);
-          return; // 에러 메시지 표시 안함
-        }
-
-        // no-speech 에러만 사용자에게 알림
-        if (event.error === "no-speech") {
-          TemiBridge.showToast("음성이 감지되지 않았어요. 다시 시도해주세요!");
-          setIsListening(false);
-          setIsThinking(false);
-          return;
-        }
-      }
-
-      // 브라우저 환경에서는 모든 에러 표시
       let errorMessage = "음성 인식 오류가 발생했어요";
 
-      switch (event.error) {
-        case "no-speech":
+      switch (error) {
+        case "no_speech":
           errorMessage = "음성이 감지되지 않았어요. 다시 시도해주세요!";
           break;
-        case "audio-capture":
-          errorMessage = "마이크에 접근할 수 없어요. 권한을 확인해주세요!";
+        case "no_match":
+          errorMessage = "음성을 인식하지 못했어요. 다시 시도해주세요!";
           break;
-        case "not-allowed":
-          errorMessage = "마이크 권한이 거부되었어요!";
+        case "no_permission":
+          errorMessage = "마이크 권한이 필요해요!";
           break;
         case "network":
+        case "network_timeout":
           errorMessage = "네트워크 오류가 발생했어요!";
+          break;
+        case "busy":
+          errorMessage =
+            "음성 인식이 사용 중이에요. 잠시 후 다시 시도해주세요!";
           break;
       }
 
@@ -144,35 +119,15 @@ export default function VoiceChatPage() {
       setIsThinking(false);
     };
 
-    recognitionInstance.onend = () => {
-      console.log("🛑 음성 인식 종료됨");
-      setIsListening(false);
+    // cleanup
+    return () => {
+      console.log("🧹 음성 인식 콜백 해제");
+      window.onSpeechReady = null;
+      window.onSpeechStart = null;
+      window.onSpeechEnd = null;
+      window.onSpeechResult = null;
+      window.onSpeechError = null;
     };
-
-    // ✅✅✅ Temi 환경에서는 권한 체크 완전히 스킵
-    if (window.Temi) {
-      console.log("🤖 Temi 환경: recognition 객체 바로 생성 (권한 체크 스킵)");
-      setRecognition(recognitionInstance);
-    } else {
-      // 브라우저 환경에서만 권한 체크
-      if (navigator.mediaDevices?.getUserMedia) {
-        navigator.mediaDevices
-          .getUserMedia({ audio: true })
-          .then(() => {
-            console.log("✅ 브라우저: 마이크 권한 있음");
-            setRecognition(recognitionInstance);
-          })
-          .catch((err) => {
-            console.error("❌ 브라우저: 마이크 권한 없음:", err);
-            alert(
-              "마이크 권한이 필요합니다!\n브라우저 설정에서 권한을 허용해주세요."
-            );
-          });
-      } else {
-        console.warn("⚠️ MediaDevices API 없음");
-        alert("마이크 권한 확인이 불가능한 환경입니다.");
-      }
-    }
   }, []);
 
   const callGemini = async (userMessage) => {
@@ -215,36 +170,15 @@ export default function VoiceChatPage() {
   };
 
   const startListening = () => {
-    if (recognition) {
-      console.log("🎤 음성 인식 시작 시도...");
-      setIsListening(true);
-      try {
-        recognition.start();
-      } catch (error) {
-        console.error("❌ 시작 실패:", error);
-        setIsListening(false);
+    console.log("🎤 음성 인식 시작 버튼 클릭");
 
-        // ✅ Temi 환경에서 "already started" 에러는 무시
-        if (window.Temi && error.message.includes("already started")) {
-          console.warn("⚠️ Temi 환경: 이미 시작됨 에러 무시");
-          return;
-        }
-
-        if (window.Temi) {
-          TemiBridge.showToast("음성 인식을 시작할 수 없어요");
-        } else {
-          alert("음성 인식을 시작할 수 없어요: " + error.message);
-        }
-      }
-    } else {
-      console.error("❌ recognition 객체가 없음");
-
-      if (window.Temi) {
-        TemiBridge.showToast("음성 인식이 초기화되지 않았어요");
-      } else {
-        alert("음성 인식이 초기화되지 않았어요!");
-      }
+    if (isListening) {
+      console.log("⚠️ 이미 음성 인식 중");
+      return;
     }
+
+    setIsListening(true);
+    TemiBridge.startSpeechRecognition();
   };
 
   return (
@@ -253,9 +187,8 @@ export default function VoiceChatPage() {
         <h1 className="text-5xl font-semibold mb-4">테미랑 대화하기</h1>
       </div>
 
-      {/* 대화 내용 + 상태 텍스트 통합 */}
+      {/* 대화 내용 */}
       <div className="w-[80%] mx-auto rounded-3xl shadow-[0_12px_60px_rgba(0,0,0,0.12)]">
-        {/* 대화 영역 */}
         <div className="backdrop-blur-md rounded-t-3xl p-8 h-[700px] overflow-y-auto">
           <div className="space-y-4">
             {messages.map((msg, idx) => (
