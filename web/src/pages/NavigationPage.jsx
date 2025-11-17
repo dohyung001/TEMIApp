@@ -1,25 +1,33 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import NavigateIcon from "../assets/icons/navigate.svg?react";
+import RightArrowIcon from "../assets/icons/right_arrow.svg?react";
+import AngleButton from "../components/AngleButton";
+import Divider from "../components/Divider";
 
-import Step1 from "../components/navigation/Step1";
-import Step2 from "../components/navigation/Step2";
-import Step3 from "../components/navigation/Step3";
 export default function NavigationPage() {
-  const [step, setStep] = useState(1);
+  const navigate = useNavigate();
 
-  
-
-
-  console.log(step);
   return (
-    <div className="flex items-center justify-center ">
-      <div>
-        {step === 1 && <Step1 onNext={() => setStep(2)} />}
+    <div className="flex flex-col items-center justify-center text-center">
+      <NavigateIcon />
 
-        {step === 2 && <Step2 />}
+      <h1 className="text-6xl font-bold mt-12 mb-8">길 찾기</h1>
 
-        {step === 3 && <Step3 />}
-      </div>
+      <p className="text-3xl text-slate-600">원하는 목적지를 선택하면</p>
+
+      <p className="text-3xl text-slate-600">
+        테미가 <span className="text-[#1D4ED8] font-bold">직접</span> 목적지로
+        안내해드려요
+      </p>
+
+      <Divider />
+
+      <AngleButton
+        icon={<RightArrowIcon />}
+        onClick={() => navigate("/navigation/step2")}
+      >
+        길찾기
+      </AngleButton>
     </div>
   );
 }

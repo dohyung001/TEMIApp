@@ -3,10 +3,80 @@
 class TemiBridgeService {
   constructor() {
     this.listeners = new Map();
+    this.assetCache = new Map(); // 에셋 캐시
 
     window.onTemiLocationStatus = (data) => {
       this.emit("locationStatus", data);
     };
+  }
+
+  // ========== Asset 로딩 (NEW) ==========
+
+  loadAsset(path) {
+    // 캐시 확인
+    if (this.assetCache.has(path)) {
+      return Promise.resolve(this.assetCache.get(path));
+    }
+
+    return new Promise((resolve, reject) => {
+      if (window.Temi && window.Temi.loadAssetAsBase64) {
+        try {
+          const base64Data = window.Temi.loadAssetAsBase64(path);
+          if (base64Data) {
+            this.assetCache.set(path, base64Data);
+            resolve(base64Data);
+          } else {
+            reject(new Error(`Failed to load asset: ${path}`));
+          }
+        } catch (error) {
+          reject(error);
+        }
+      } else {
+        // 개발 환경: 일반 경로 반환
+        resolve(`/${path}`);
+      }
+    });
+  }
+
+  loadImage(filename) {
+    const cacheKey = `img/${filename}`;
+    if (this.assetCache.has(cacheKey)) {
+      return Promise.resolve(this.assetCache.get(cacheKey));
+    }
+
+    return new Promise((resolve, reject) => {
+      if (window.Temi && window.Temi.loadImageAsBase64) {
+        try {
+          const base64Data = window.Temi.loadImageAsBase64(filename);
+          if (base64Data) {
+            this.assetCache.set(cacheKey, base64Data);
+            resolve(base64Data);
+          } else {
+            reject(new Error(`Failed to load image: ${filename}`));
+          }
+        } catch (error) {
+          reject(error);
+        }
+      } else {
+        resolve(`/img/${filename}`);
+      }
+    });
+  }
+
+  checkAssetExists(path) {
+    if (window.Temi && window.Temi.checkAssetExists) {
+      return window.Temi.checkAssetExists(path);
+    }
+    return true; // 개발 환경에서는 true
+  }
+
+  // ========== 권한 확인 (NEW) ==========
+
+  hasPermission(permission) {
+    if (window.Temi && window.Temi.hasPermission) {
+      return window.Temi.hasPermission(permission);
+    }
+    return true; // 개발 환경에서는 true
   }
 
   // ========== 음성 (Speech) ==========
@@ -19,7 +89,7 @@ class TemiBridgeService {
     }
   }
 
-  // ========== 커스터마이징 (NEW) ==========
+  // ========== 커스터마이징 ==========
 
   setCustomization(settings) {
     if (window.Temi) {
@@ -191,6 +261,12 @@ class TemiBridgeService {
 
   isNativeAvailable() {
     return typeof window.Temi !== "undefined";
+  }
+
+  // ========== 캐시 관리 ==========
+
+  clearAssetCache() {
+    this.assetCache.clear();
   }
 }
 

@@ -4,8 +4,13 @@ import MickIcon from "../../assets/icons/mick.svg?react";
 
 export default function VoiceChatPage() {
   const [isListening, setIsListening] = useState(false);
-  const [isThinking, setIsThinking] = useState(false); // ⭐ 추가
-  const [messages, setMessages] = useState([]);
+  const [isThinking, setIsThinking] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      text: "안녕하세요! TEMI입니다. 궁금하신 점을 말씀해주세요.",
+    },
+  ]);
   const [recognition, setRecognition] = useState(null);
 
   const TEMI_SYSTEM_PROMPT = `당신은 테미(Temi)라는 친근한 안내 로봇입니다.
@@ -49,7 +54,12 @@ export default function VoiceChatPage() {
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
+      console.error("❌ SpeechRecognition API 없음");
+      if (window.Temi) {
+        TemiBridge.showToast("음성 인식을 지원하지 않는 환경입니다");
+      } else {
+        alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
+      }
       return;
     }
 
@@ -58,17 +68,14 @@ export default function VoiceChatPage() {
     recognitionInstance.continuous = false;
     recognitionInstance.interimResults = false;
 
-    // ⭐ 시작 이벤트
     recognitionInstance.onstart = () => {
       console.log("🎤 음성 인식 시작됨");
     };
 
-    // ⭐ 소리 감지 이벤트
     recognitionInstance.onsoundstart = () => {
       console.log("🔊 소리 감지됨");
     };
 
-    // ⭐ 음성 감지 이벤트
     recognitionInstance.onspeechstart = () => {
       console.log("🗣️ 음성 감지됨");
     };
@@ -91,9 +98,25 @@ export default function VoiceChatPage() {
 
     recognitionInstance.onerror = (event) => {
       console.error("❌ 음성 인식 오류:", event.error);
-      console.error("오류 상세:", event);
 
-      // ⭐ 사용자에게 알림
+      // ✅✅✅ Temi 환경에서 특정 에러는 무시
+      if (window.Temi) {
+        if (event.error === "audio-capture" || event.error === "not-allowed") {
+          console.warn("⚠️ Temi 환경: 권한 관련 에러 무시하고 계속 진행");
+          setIsListening(false);
+          return; // 에러 메시지 표시 안함
+        }
+
+        // no-speech 에러만 사용자에게 알림
+        if (event.error === "no-speech") {
+          TemiBridge.showToast("음성이 감지되지 않았어요. 다시 시도해주세요!");
+          setIsListening(false);
+          setIsThinking(false);
+          return;
+        }
+      }
+
+      // 브라우저 환경에서는 모든 에러 표시
       let errorMessage = "음성 인식 오류가 발생했어요";
 
       switch (event.error) {
@@ -111,7 +134,12 @@ export default function VoiceChatPage() {
           break;
       }
 
-      alert(errorMessage);
+      if (window.Temi) {
+        TemiBridge.showToast(errorMessage);
+      } else {
+        alert(errorMessage);
+      }
+
       setIsListening(false);
       setIsThinking(false);
     };
@@ -121,17 +149,30 @@ export default function VoiceChatPage() {
       setIsListening(false);
     };
 
-    // ⭐ 마이크 권한 미리 체크
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
-      .then(() => {
-        console.log("✅ 마이크 권한 있음");
-        setRecognition(recognitionInstance);
-      })
-      .catch((err) => {
-        console.error("❌ 마이크 권한 없음:", err);
-        alert("마이크 권한이 필요합니다!\n설정에서 권한을 허용해주세요.");
-      });
+    // ✅✅✅ Temi 환경에서는 권한 체크 완전히 스킵
+    if (window.Temi) {
+      console.log("🤖 Temi 환경: recognition 객체 바로 생성 (권한 체크 스킵)");
+      setRecognition(recognitionInstance);
+    } else {
+      // 브라우저 환경에서만 권한 체크
+      if (navigator.mediaDevices?.getUserMedia) {
+        navigator.mediaDevices
+          .getUserMedia({ audio: true })
+          .then(() => {
+            console.log("✅ 브라우저: 마이크 권한 있음");
+            setRecognition(recognitionInstance);
+          })
+          .catch((err) => {
+            console.error("❌ 브라우저: 마이크 권한 없음:", err);
+            alert(
+              "마이크 권한이 필요합니다!\n브라우저 설정에서 권한을 허용해주세요."
+            );
+          });
+      } else {
+        console.warn("⚠️ MediaDevices API 없음");
+        alert("마이크 권한 확인이 불가능한 환경입니다.");
+      }
+    }
   }, []);
 
   const callGemini = async (userMessage) => {
@@ -182,62 +223,71 @@ export default function VoiceChatPage() {
       } catch (error) {
         console.error("❌ 시작 실패:", error);
         setIsListening(false);
-        alert("음성 인식을 시작할 수 없어요: " + error.message);
+
+        // ✅ Temi 환경에서 "already started" 에러는 무시
+        if (window.Temi && error.message.includes("already started")) {
+          console.warn("⚠️ Temi 환경: 이미 시작됨 에러 무시");
+          return;
+        }
+
+        if (window.Temi) {
+          TemiBridge.showToast("음성 인식을 시작할 수 없어요");
+        } else {
+          alert("음성 인식을 시작할 수 없어요: " + error.message);
+        }
       }
     } else {
       console.error("❌ recognition 객체가 없음");
-      alert("음성 인식이 초기화되지 않았어요!");
+
+      if (window.Temi) {
+        TemiBridge.showToast("음성 인식이 초기화되지 않았어요");
+      } else {
+        alert("음성 인식이 초기화되지 않았어요!");
+      }
     }
   };
 
   return (
     <div>
       <div className="text-center mb-8">
-        <h1 className="text-5xl font-semibold mb-4"> 테미랑 대화하기</h1>
+        <h1 className="text-5xl font-semibold mb-4">테미랑 대화하기</h1>
       </div>
 
       {/* 대화 내용 + 상태 텍스트 통합 */}
       <div className="w-[80%] mx-auto rounded-3xl shadow-[0_12px_60px_rgba(0,0,0,0.12)]">
-        {/* 대화 영역 - 위쪽만 둥글게 */}
-        <div className="backdrop-blur-md rounded-t-3xl p-8 min-h-[400px] max-h-[500px] overflow-y-auto">
-          {messages.length === 0 ? (
-            <p className="text-center text-xl">
-              아직 대화가 없어요. 버튼을 눌러 시작하세요!
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {messages.map((msg, idx) => (
+        {/* 대화 영역 */}
+        <div className="backdrop-blur-md rounded-t-3xl p-8 h-[700px] overflow-y-auto">
+          <div className="space-y-4">
+            {messages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`flex ${
+                  msg.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
                 <div
-                  key={idx}
-                  className={`flex ${
-                    msg.role === "user" ? "justify-end" : "justify-start"
+                  className={`max-w-[80%] px-6 py-4 rounded-2xl text-2xl shadow-[0_4px_20px_rgba(0,0,0,0.22)] ${
+                    msg.role === "user"
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-100 text-gray-800"
                   }`}
                 >
-                  <div
-                    className={`max-w-[80%] px-6 py-4 rounded-2xl text-lg shadow-[0_4px_20px_rgba(0,0,0,0.22)] ${
-                      msg.role === "user"
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {msg.text}
-                  </div>
+                  {msg.text}
                 </div>
-              ))}
+              </div>
+            ))}
 
-              {/* ⭐ 로딩 메시지 */}
-              {isThinking && (
-                <div className="flex justify-start">
-                  <div className="max-w-[80%] px-6 py-4 rounded-2xl text-lg shadow-[0_4px_20px_rgba(0,0,0,0.22)] bg-gray-100 text-gray-800">
-                    <span className="animate-pulse">생각 중...</span>
-                  </div>
+            {isThinking && (
+              <div className="flex justify-start">
+                <div className="max-w-[80%] px-6 py-4 rounded-2xl text-2xl shadow-[0_4px_20px_rgba(0,0,0,0.22)] bg-gray-100 text-gray-800">
+                  <span className="animate-pulse">생각 중...</span>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* 상태 텍스트 - 아래쪽 각지게 */}
+        {/* 상태 텍스트 */}
         <div className="rounded-b-3xl border-gray-200 px-8 py-4">
           <p className="text-xl text-slate-600 text-center">
             {isListening
@@ -253,7 +303,7 @@ export default function VoiceChatPage() {
       <div className="flex justify-center mt-4">
         <button
           onClick={startListening}
-          disabled={isListening || isThinking} // ⭐ 생각 중에도 비활성화
+          disabled={isListening || isThinking}
           className={`rounded-full p-10 shadow-2xl transition-all duration-100
             ${
               isListening

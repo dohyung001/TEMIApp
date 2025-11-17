@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import axios from "axios";
 
 export default function Step5({ finalPhoto, onReset, onGoHome }) {
   const [qrUrl, setQrUrl] = useState(null);
@@ -22,35 +21,47 @@ export default function Step5({ finalPhoto, onReset, onGoHome }) {
       setLoading(true);
       setError(null);
 
-      // Base64에서 data:image/jpeg;base64, 부분 제거
-      const base64Data = finalPhoto.split(",")[1];
+      // ✅ Android 네이티브 함수 사용 (CORS 우회)
+      if (window.Temi && window.Temi.uploadImageToImgBB) {
+        console.log("🤖 Android 프록시로 업로드 시도...");
 
-      // FormData 생성
-      const formData = new FormData();
-      formData.append("key", "e947920cd2d87b83c74bfdb195b2a18f");
-      formData.append("image", base64Data);
-      formData.append("expiration", 604800); // 7일 후 삭제
+        const resultJson = window.Temi.uploadImageToImgBB(finalPhoto);
+        const result = JSON.parse(resultJson);
 
-      // axios로 업로드
-      const response = await axios.post(
-        "https://api.imgbb.com/1/upload",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+        if (result.success && result.data && result.data.url) {
+          setQrUrl(result.data.url);
+          console.log("✅ 업로드 성공:", result.data.url);
+        } else {
+          throw new Error(result.error || "업로드 실패");
         }
-      );
+      }
+      // ✅ 개발 환경 fallback (브라우저에서 테스트용)
+      else {
+        console.log("🌐 브라우저 모드로 업로드 시도...");
 
-      if (response.data.success && response.data.data.url) {
-        setQrUrl(response.data.data.url);
-        console.log("✅ 업로드 성공:", response.data.data.url);
-      } else {
-        throw new Error("업로드 실패");
+        const base64Data = finalPhoto.split(",")[1];
+        const formData = new FormData();
+        formData.append("key", "e947920cd2d87b83c74bfdb195b2a18f");
+        formData.append("image", base64Data);
+        formData.append("expiration", 604800);
+
+        const response = await fetch("https://api.imgbb.com/1/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.data.url) {
+          setQrUrl(data.data.url);
+          console.log("✅ 업로드 성공:", data.data.url);
+        } else {
+          throw new Error("업로드 실패");
+        }
       }
     } catch (err) {
       console.error("❌ 업로드 에러:", err);
-      setError("이미지 업로드에 실패했습니다");
+      setError(`이미지 업로드에 실패했습니다: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -59,7 +70,7 @@ export default function Step5({ finalPhoto, onReset, onGoHome }) {
   // 로딩 중
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center  ">
+      <div className="flex flex-col items-center justify-center min-h-screen">
         <div className="w-20 h-20 border-8 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
         <h2 className="text-4xl font-bold text-gray-800">QR 코드 생성 중...</h2>
       </div>
@@ -69,7 +80,7 @@ export default function Step5({ finalPhoto, onReset, onGoHome }) {
   // 에러 발생
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center   p-8">
+      <div className="flex flex-col items-center justify-center min-h-screen p-8">
         <div className="text-8xl mb-8">❌</div>
         <h2 className="text-4xl font-bold text-red-600 mb-4">{error}</h2>
         <div className="flex gap-6 mt-8">
@@ -98,7 +109,7 @@ export default function Step5({ finalPhoto, onReset, onGoHome }) {
 
   // QR 코드 표시
   return (
-    <div className="flex flex-col items-center justify-center ">
+    <div className="flex flex-col items-center justify-center min-h-screen">
       {/* 타이틀 */}
       <h1 className="text-6xl font-bold text-blue-600 mb-4">QR 생성 완료!</h1>
       <p className="text-3xl text-gray-600 mb-12">
@@ -116,7 +127,7 @@ export default function Step5({ finalPhoto, onReset, onGoHome }) {
 
       {/* 안내 문구 */}
       <p className="text-2xl text-gray-500 mb-12">
-        * 큐알은 이 창이 종료될과 동시에 사라집니다.
+        * QR코드는 이 창이 종료될 때까지 유효합니다.
       </p>
     </div>
   );
