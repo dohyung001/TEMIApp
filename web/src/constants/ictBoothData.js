@@ -354,24 +354,6 @@ const ictBoothData = [
       "향료에 대한 빅데이터에 기반하여 개인 맞춤형 향수 레시피 지원 서비스. 서울대학교 빅데이터 혁신융합대학사업단 학생 커뮤니티 소속 팀이 직접 개발한 프로그램. 빅데이터가 추천해준 향수 레시피를 보고 실제 향수 샘플 만들기 체험 진행",
     location: "빅데이터 부스",
   },
-  {
-    id: "i-23",
-    name: "AI 캐리커처",
-    img: "img/i/i-23.jpg",
-
-  },
-  {
-    id: "i-24",
-    name: "AI 명화 속 몰입",
-    img: "img/i/i-24.jpg",
-
-  },
-  {
-    id: "i-25",
-    name: "센서가 듣고 AI가 생각한다",
-    img: "img/i/i-25.jpg",
-
-  },
 ];
 
 export default ictBoothData;
