@@ -214,7 +214,7 @@ class TemiInterface(
             val bytes = inputStream.readBytes()
             inputStream.close()
 
-            "data:image/jpeg;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
+            "data:image/png;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
         } catch (e: Exception) {
             Log.e("TemiInterface", "이미지 로드 실패: $filename", e)
             ""
@@ -226,7 +226,7 @@ class TemiInterface(
     @JavascriptInterface
     fun loadBoothImage(filename: String): String {
         return try {
-            val inputStream = activity.assets.open("booths/$filename")
+            val inputStream = activity.assets.open("$filename")
             val bytes = inputStream.readBytes()
             inputStream.close()
 

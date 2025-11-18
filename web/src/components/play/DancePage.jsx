@@ -14,15 +14,28 @@ const DancePage = () => {
   const [songs, setSongs] = useState([
     {
       id: 1,
-      title: "FAMOUS",
-      artist: "ALL DAY PROJECT",
+      title: "Blue",
+      artist: "NMIXX(엔믹스)",
+      coverFile: "blue.png", // ✅ 이미지 파일명
+      audioFile: "famous1.mp3", // ✅ 오디오 파일명
       cover: null, // Base64 이미지 데이터 (로딩 후)
       audio: null, // 오디오 파일 경로 (로딩 후)
     },
     {
       id: 2,
-      title: "GO!",
-      artist: "Unknown Artist",
+      title: "Go",
+      artist: "CORTIS(코르티스)",
+      coverFile: "go.png",
+      audioFile: "famous2.mp3",
+      cover: null,
+      audio: null,
+    },
+    {
+      id: 3,
+      title: "Golden",
+      artist: "HUNTRX(헌트릭스)",
+      coverFile: "golden.png",
+      audioFile: "famous3.mp3",
       cover: null,
       audio: null,
     },
@@ -76,33 +89,38 @@ const DancePage = () => {
   const loadAssets = async () => {
     try {
       if (window.Temi) {
-        // Temi 환경: Android에서 로드
-        const coverData = window.Temi.loadImageAsBase64("famous-cover.jpg");
-        const audioPath = window.Temi.getAudioPath("famous.mp3");
+        // ✅ Temi 환경: Android에서 각 노래별로 로드
+        console.log("🤖 Temi: 노래 에셋 로딩 시작");
 
-        if (coverData && audioPath) {
-          setSongs((prevSongs) =>
-            prevSongs.map((song) => ({
-              ...song,
-              cover: coverData.startsWith("data:")
-                ? coverData
-                : `data:image/jpeg;base64,${coverData}`,
-              audio: audioPath,
-            }))
-          );
-        }
-      } else {
-        // 개발 환경: 일반 경로
-        setSongs((prevSongs) =>
-          prevSongs.map((song) => ({
+        const loadedSongs = songs.map((song) => {
+          const coverData = window.Temi.loadImageAsBase64(song.coverFile);
+          const audioPath = window.Temi.getAudioPath(song.audioFile);
+
+          return {
             ...song,
-            cover: "/songs/famous-cover.jpg",
-            audio: "/songs/famous.mp3",
-          }))
-        );
+            cover: coverData.startsWith("data:")
+              ? coverData
+              : `data:image/png;base64,${coverData}`,
+            audio: audioPath,
+          };
+        });
+
+        setSongs(loadedSongs);
+        console.log("✅ Temi: 노래 에셋 로딩 완료");
+      } else {
+        // ✅ 개발 환경: 일반 경로
+        console.log("🌐 개발 환경: 일반 경로 사용");
+
+        const loadedSongs = songs.map((song) => ({
+          ...song,
+          cover: `/songs/${song.coverFile}`,
+          audio: `/songs/${song.audioFile}`,
+        }));
+
+        setSongs(loadedSongs);
       }
     } catch (error) {
-      console.error("에셋 로드 실패:", error);
+      console.error("❌ 에셋 로드 실패:", error);
     }
   };
 
@@ -159,30 +177,71 @@ const DancePage = () => {
 
   /**
    * 테미 춤 동작 함수
-   * - 1초마다 좌우로 고개 흔들기 (tiltBy)
-   * - 음악 종료/일시정지 시 동작 중지
-   */
-  const startDanceMovement = () => {
+
+   */ const startDanceMovement = () => {
     // 기존 interval 정리
     if (danceIntervalRef.current) {
       clearInterval(danceIntervalRef.current);
     }
 
-    // 1초마다 춤 동작 반복
+    let danceStep = 0; // 춤 동작 단계
+
+    // 500ms마다 다양한 춤 동작 반복
     danceIntervalRef.current = setInterval(() => {
       if (isPlaying && TemiBridge.isNativeAvailable()) {
-        // 오른쪽으로 20도 기울이기
-        TemiBridge.tiltBy(20, 3.0);
-        setTimeout(() => {
-          // 왼쪽으로 40도 기울이기 (반대 방향)
-          if (isPlaying) TemiBridge.tiltBy(-40, 3.0);
-        }, 300);
-        setTimeout(() => {
-          // 다시 중앙으로 20도 (원위치)
-          if (isPlaying) TemiBridge.tiltBy(20, 3.0);
-        }, 600);
+        switch (danceStep % 8) {
+          case 0:
+            // 1. 고개 위로 + 오른쪽으로 45도 회전
+            TemiBridge.tiltHead(45);
+            TemiBridge.turnBy(45, 2.0);
+            break;
+
+          case 1:
+            // 2. 고개 아래로 + 왼쪽으로 90도 회전
+            TemiBridge.tiltHead(-20);
+            TemiBridge.turnBy(-90, 2.5);
+            break;
+
+          case 2:
+            // 3. 고개 정면 + 오른쪽으로 45도
+            TemiBridge.tiltHead(0);
+            TemiBridge.turnBy(45, 2.0);
+            break;
+
+          case 3:
+            // 4. 고개 위로 + 제자리에서 회전
+            TemiBridge.tiltHead(55);
+            TemiBridge.turnBy(180, 3.0);
+            break;
+
+          case 4:
+            // 5. 고개 아래로 + 왼쪽으로 회전
+            TemiBridge.tiltHead(-25);
+            TemiBridge.turnBy(-45, 2.0);
+            break;
+
+          case 5:
+            // 6. 고개 위로 + 오른쪽으로
+            TemiBridge.tiltHead(40);
+            TemiBridge.turnBy(90, 2.5);
+            break;
+
+          case 6:
+            // 7. 고개 정면 + 왼쪽으로
+            TemiBridge.tiltHead(0);
+            TemiBridge.turnBy(-90, 2.0);
+            break;
+
+          case 7:
+            // 8. 고개 위로 + 오른쪽으로
+            TemiBridge.tiltHead(50);
+            TemiBridge.turnBy(45, 2.0);
+            break;
+        }
+
+        danceStep++;
       }
-    }, 1000);
+    }, 800); // 800ms마다 동작 변경
 
     // 음악 이벤트 리스너 등록
     if (audioRef.current) {
@@ -193,7 +252,9 @@ const DancePage = () => {
           danceIntervalRef.current = null;
         }
         TemiBridge.tiltHead(0);
+        TemiBridge.stopMovement();
       };
+
       // 음악 종료 시: 춤 동작 중지 + 고개 원위치 + 재생 상태 변경
       audioRef.current.onended = () => {
         if (danceIntervalRef.current) {
@@ -201,6 +262,7 @@ const DancePage = () => {
           danceIntervalRef.current = null;
         }
         TemiBridge.tiltHead(0);
+        TemiBridge.stopMovement();
         setIsPlaying(false);
       };
     }
@@ -210,7 +272,7 @@ const DancePage = () => {
 
   return (
     <div className="p-8 flex flex-col items-center justify-center">
-      <div className="max-w-5xl w-full">
+      <div className="px-41">
         {/* 페이지 제목 */}
         <h1 className="text-6xl font-bold text-slate-800 text-center mb-12">
           춤추기

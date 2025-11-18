@@ -19,15 +19,12 @@ import CustomPage from "../components/play/CustomPage";
 import DancePage from "../components/play/DancePage";
 import NavigattionStep2 from "../components/navigation/NavigattionStep2";
 const router = createBrowserRouter([
-  // 홈 (HomeLayout)
-  {
-    path: "/",
-    element: <HomePage />,
-  },
   // 나머지 페이지들 (PageLayout)
   {
+    path: "/",
     element: <PageLayout />,
     children: [
+      { index: true, element: <HomePage /> },
       { path: "/navigation", element: <NavigationPage /> }, // 길 안내
       { path: "/navigation/step2", element: <NavigattionStep2 /> },
       { path: "/play", element: <PlayPage /> }, // 테미랑 놀기

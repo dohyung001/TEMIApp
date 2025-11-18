@@ -8,7 +8,7 @@ export default function NavigationPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col items-center justify-center text-center">
+    <div className="flex flex-col items-center justify-center text-center pt-20">
       <NavigateIcon />
 
       <h1 className="text-6xl font-bold mt-12 mb-8">길 찾기</h1>

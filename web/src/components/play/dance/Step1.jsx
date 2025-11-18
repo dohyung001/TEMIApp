@@ -13,12 +13,12 @@ export default function Step1({ songs, onSelectSong }) {
   return (
     <div>
       {/* 설명 텍스트 */}
-      <p className="text-4xl text-gray-500 text-center mb-8">
+      <p className="text-4xl text-gray-500 text-center mb-12">
         노래 하이라이트에 맞춰서 테미가 춤을 춰요
       </p>
 
       {/* 노래 목록 그리드 (2열) */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-3 gap-6">
         {songs.map((song) => (
           <button
             key={song.id}
@@ -26,7 +26,7 @@ export default function Step1({ songs, onSelectSong }) {
             className="rounded-[50px] w-[480px] h-[480px] p-6 transition-all duration-300 border-2 border-slate-200 shadow-2xl flex flex-col justify-center items-center"
           >
             {/* 앨범 커버 이미지 (244x244px) */}
-            <div className="aspect-square w-[244px] h-[244px] rounded-xl mb-4 overflow-hidden">
+            <div className="aspect-square w-[260px] h-[260px] rounded-xl mb-4 overflow-hidden">
               <AlbumCover src={song.cover} alt={song.title} />
             </div>
             {/* 노래 제목 */}
