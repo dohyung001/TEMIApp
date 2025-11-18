@@ -65,16 +65,16 @@ export default function HomePage() {
       </div>
 
       {/* 메인 컨텐츠 - flex-1로 남은 공간 모두 차지 */}
-      <div className="flex-1 flex flex-col justify-center relative min-h-0">
+      <div className="flex-1 flex flex-col pt-16 relative min-h-0">
         {/* 말풍선 */}
-        <div className="absolute -top-3 left-0 z-10">
+        <div className="absolute -top-8 left-0 z-10">
           <SpeechBubble icon={<LocationIcon />}>
             로봇이 직접 안내해드려요!
           </SpeechBubble>
         </div>
 
         {/* 그리드 컨테이너 - 높이 확보 */}
-        <div className="grid grid-cols-4 gap-6 h-[725px] ">
+        <div className="grid grid-cols-4 gap-6 h-[800px] ">
           {/* 길 안내 (큰 카드) */}
           <div className="col-span-1 row-span-2 pr-3">
             <button
@@ -112,11 +112,6 @@ export default function HomePage() {
         </div>
 
         {/* 하단 안내 - 높이 축소 */}
-        <div className="text-center mt-7 ">
-          <p className="text-gray-600 text-3xl">
-            터치하거나 음성으로 '테미야~' 부른 후에 명령해주세요
-          </p>
-        </div>
       </div>
     </div>
   );

@@ -17,7 +17,7 @@ const DancePage = () => {
       title: "Blue",
       artist: "NMIXX(엔믹스)",
       coverFile: "blue.png", // ✅ 이미지 파일명
-      audioFile: "famous1.mp3", // ✅ 오디오 파일명
+      audioFile: "blue.mp3", // ✅ 오디오 파일명
       cover: null, // Base64 이미지 데이터 (로딩 후)
       audio: null, // 오디오 파일 경로 (로딩 후)
     },
@@ -26,7 +26,7 @@ const DancePage = () => {
       title: "Go",
       artist: "CORTIS(코르티스)",
       coverFile: "go.png",
-      audioFile: "famous2.mp3",
+      audioFile: "go.mp3",
       cover: null,
       audio: null,
     },
@@ -35,7 +35,7 @@ const DancePage = () => {
       title: "Golden",
       artist: "HUNTRX(헌트릭스)",
       coverFile: "golden.png",
-      audioFile: "famous3.mp3",
+      audioFile: "golden.mp3",
       cover: null,
       audio: null,
     },
