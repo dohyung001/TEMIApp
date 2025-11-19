@@ -1,17 +1,42 @@
-import { useNavigate } from "react-router-dom";
-import BackButton from "../components/Button";
+import React from 'react';
 
+// ------------------------------------------------------------------
+// ★★★★★ 1. QR 코드 이미지 Import ★★★★★
+// ------------------------------------------------------------------
+// (web/src/assets/img/ 폴더에 있는 QR 코드 이미지)
+// (파일 이름이 다르면 이 경로를 수정하세요)
+
+import qrDinoImage from '/img/qrcode_docs.google.com.png'; 
+// ------------------------------------------------------------------
+
+
+// (메인 컴포넌트)
 export default function SurveyPage() {
-  const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-600">
-      <div className="max-w-7xl mx-auto px-8 py-8">
-        <BackButton onClick={() => navigate("/")} />
+    // 1. 전체 화면 컨테이너
+    <div className="relative flex flex-col items-center justify-center w-screen h-screen p-10 bg-[#f4f6fd] overflow-hidden text-gray-800">
+      
+      {/* 2. 홈 버튼 (제거됨) */}
 
-        <div className="text-center mb-12 mt-8">
-          <h1 className="text-5xl font-bold text-white mb-4">📋 설문조사</h1>
-          <p className="text-2xl text-white/90">준비 중입니다</p>
+      {/* 3. 텍스트 컨텐츠 (UI 스크린샷 반영) */}
+      <div className="text-center mb-12 animate-fade-in">
+        <p className="text-3xl text-gray-600 mb-4">더 나은 테미를 위해</p>
+        <h1 className="text-6xl font-extrabold mb-5">의견을 들려주세요</h1>
+        <p className="text-2xl text-gray-500">거짓말 아니고 10초 걸려요!</p>
+      </div>
+
+      {/* 4. QR 코드 섹션 */}
+      <div className="relative flex items-center justify-center animate-fade-in" style={{ animationDelay: '0.2s' }}>
+        
+        <div className="relative">
+          {/* Import한 다이노 QR 코드 이미지 사용 */}
+          <img 
+            src={qrDinoImage} 
+            alt="설문조사 QR 코드" 
+            className="w-80 h-80 rounded-lg shadow-xl" // 320x320px
+          />
+          
         </div>
       </div>
     </div>
