@@ -86,7 +86,7 @@ const CardBack = ({ className = "", onClick, style, ...props }) => {
       //rgba(0, 69, 98, 0.9) 0%, rgba(202, 255, 214, 1) 100%)
       style={{
         background:
-          "linear-gradient(168deg, rgba(215, 192, 65, 1) 0%, #e2f0ff 100%)", // Image 1의 카드 배경색
+          "linear-gradient(168deg, rgb(65, 150, 215) 0%, #e2f0ff 100%)", // Image 1의 카드 배경색
         boxShadow: "0px 0px 10px rgba(63, 63, 63, 0.345)",
         ...style,
       }}
