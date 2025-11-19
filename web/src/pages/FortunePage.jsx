@@ -309,6 +309,8 @@ export default function FortuneGame() {
     </div>
   );
 }
+
+//.
 // import React, { useState } from 'react';
 
 // // (1) 아이콘 import
