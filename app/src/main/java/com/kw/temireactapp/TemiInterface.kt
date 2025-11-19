@@ -42,9 +42,18 @@ class TemiInterface(
     // ✅ AsrListener 구현
     private val asrListener = object : Robot.AsrListener {
         override fun onAsrResult(asrResult: String, sttLanguage: SttLanguage) {
-            Log.d(TAG, "✅✅ [Temi ASR] 인식 결과: \"$asrResult\" (언어: $sttLanguage)")
+            Log.d(TAG, "✅✅ [Temi ASR] 인식 결과: \"$asrResult\"")
 
             isListening = false
+
+            // ✅ 안전장치: 혹시 모를 Temi 응답 즉시 차단
+            try {
+                robot.finishConversation()
+                robot.cancelAllTtsRequests()
+                Log.d(TAG, "🛑 안전장치: Temi 대화 시스템 중단")
+            } catch (e: Exception) {
+                Log.w(TAG, "⚠️ 대화 중단 실패 (무시): ${e.message}")
+            }
 
             // JSON 이스케이프 처리
             val escapedText = asrResult
@@ -57,23 +66,30 @@ class TemiInterface(
             // JavaScript로 전달
             callJavaScript("window.onSpeechResult", "\"$escapedText\"")
 
-            // Toast로도 표시
             showToast("인식됨: $asrResult")
         }
     }
 
     init {
+        Log.d(TAG, "🚀 TemiInterface 초기화 시작")
+
         // ✅ Temi ASR 리스너 등록
         robot.addAsrListener(asrListener)
+        Log.d(TAG, "✅ ASR 리스너 등록됨")
 
-        // ✅ 한국어 ASR 설정 (선택사항)
+        // ✅✅✅ 이 줄 추가! (Kiosk 앱 요청)
+        robot.requestToBeKioskApp()
+        Log.d(TAG, "✅ Kiosk 앱 요청 완료")
+
+        // ✅ 한국어 ASR 설정
         try {
             robot.setAsrLanguages(listOf(SttLanguage.KO_KR))
-            Log.d(TAG, "✅ Temi ASR 초기화 완료 (한국어)")
+            Log.d(TAG, "✅ ASR 언어 설정 완료 (한국어)")
         } catch (e: Exception) {
-            Log.w(TAG, "⚠️ setAsrLanguages 실패 (무시): ${e.message}")
-            Log.d(TAG, "✅ Temi ASR 초기화 완료 (기본 언어)")
+            Log.w(TAG, "⚠️ ASR 언어 설정 실패 (기본 언어 사용): ${e.message}")
         }
+
+        Log.d(TAG, "✅ Temi ASR 초기화 완료 (NLU + UI 오버라이드 모드)")
     }
 
     // ========== 음성 인식 시작 (Temi SDK 사용) ==========
