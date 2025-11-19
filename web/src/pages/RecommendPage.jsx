@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import AngleButton from "../components/AngleButton"
+import RightArrowIcon from "../assets/icons/right_arrow.svg?react";
 
 // --- 1. 아이콘 컴포넌트 (사이즈 대폭 확대 32~40px) ---
 const Icons = {
@@ -186,8 +188,9 @@ const BoothCard = ({ booth }) => {
   const textColor = 'text-gray-800';
 
   return (
-    <div className={`${cardBgColor} rounded-3xl shadow-xl overflow-hidden w-full max-w-[420px] flex flex-col transform hover:scale-105 transition-transform duration-300`}>
-      <div className="m-6 mb-0 rounded-2xl overflow-hidden bg-white/50 relative h-60 flex-shrink-0">
+    // ★★★ 수정된 부분: w-[440px] 추가 ★★★
+    <div className={`w-[440px] ${cardBgColor} rounded-3xl shadow-xl overflow-hidden  flex flex-col transform  transition-transform duration-300`}>
+      <div className="m-6 mb-0 rounded-2xl overflow-hidden  relative h-60 flex-shrink-0">
         {booth.image ? (
           <img src={booth.image} alt={booth.title} className="w-full h-full object-cover" />
         ) : (
@@ -261,12 +264,12 @@ const BoothRecommender = () => {
       <div className="w-16 h-2 bg-blue-100 rounded-full mb-20"></div>
 
       {/* 시작 버튼: xl -> 3xl */}
-      <button
+      <AngleButton
         onClick={handleStart}
-        className="bg-[#3b82f6] text-white font-bold py-8 px-32 rounded-[2rem] shadow-[0_10px_20px_rgba(59,130,246,0.3)] hover:shadow-[0_15px_30px_rgba(59,130,246,0.4)] hover:bg-blue-600 transition-all duration-300 text-3xl flex items-center gap-4"
+        icon={<RightArrowIcon />}
       >
-        시작하기 <Icons.ArrowRight />
-      </button>
+        시작하기 
+      </AngleButton>
     </div>
   );
 
@@ -297,7 +300,7 @@ const BoothRecommender = () => {
           {/* VS Badge (중앙) */}
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
              <div className="bg-[#7c92e6] w-28 h-20 rounded-[30px] flex items-center justify-center border-[6px] border-[#f8f9fe] shadow-lg">
-                <span className="text-white font-black text-4xl italic pr-1 pt-1">VS</span>
+               <span className="text-white font-black text-4xl italic pr-1 pt-1">VS</span>
              </div>
           </div>
 
@@ -313,30 +316,30 @@ const BoothRecommender = () => {
 
         {/* 하단 네비게이션 영역 */}
         <div className="w-full flex justify-between items-center px-10">
-           {/* 이전 버튼 */}
-           <div className="w-40">
-             {step > 1 && (
-               <button
-                 onClick={handleBack}
-                 className="bg-[#3b82f6] text-white pl-6 pr-10 py-5 rounded-full font-bold text-2xl flex items-center hover:bg-blue-700 transition shadow-md w-full justify-center"
-               >
-                 <div className="mr-2"><Icons.BackArrow /></div>
-                 이전
-               </button>
-             )}
-           </div>
+             {/* 이전 버튼 */}
+             <div className="w-40">
+               {step > 1 && (
+                <button
+                  onClick={handleBack}
+                  className="bg-[#3b82f6] text-white pl-6 pr-10 py-5 rounded-full font-bold text-2xl flex items-center hover:bg-blue-700 transition shadow-md w-full justify-center"
+                >
+                  <div className="mr-2"><Icons.BackArrow /></div>
+                  이전
+                </button>
+               )}
+             </div>
 
-           {/* 페이지 인디케이터 */}
-           <div className="flex gap-5">
-            {Array.from({ length: totalQuestions }).map((_, index) => (
-              <div
-                key={index}
-                className={`w-5 h-5 rounded-full transition-all duration-300 ${index < step ? 'bg-[#3b82f6] scale-110' : 'bg-gray-300'}`}
-              ></div>
-            ))}
-          </div>
-          
-          <div className="w-40"></div>
+             {/* 페이지 인디케이터 */}
+             <div className="flex gap-5">
+              {Array.from({ length: totalQuestions }).map((_, index) => (
+                <div
+                  key={index}
+                  className={`w-5 h-5 rounded-full transition-all duration-300 ${index < step ? 'bg-[#3b82f6] scale-110' : 'bg-gray-300'}`}
+                ></div>
+              ))}
+             </div>
+             
+             <div className="w-40"></div>
         </div>
       </div>
     );
@@ -344,15 +347,16 @@ const BoothRecommender = () => {
 
   // 3. 결과 화면 (폰트 Very Large)
   const renderResultScreen = () => {
+    // Note: The key generation should happen here to use the latest answers state
     let resultKey = answers.join('-');
     const result = resultsData[resultKey];
 
     if (!result || !result.booths) {
       return (
         <div className="text-center flex flex-col items-center justify-center h-[500px]">
-            <h2 className="text-4xl font-bold text-gray-800">결과를 찾을 수 없습니다.</h2>
-            <p className="text-gray-500 mt-6 text-2xl">선택 조합: {resultKey}</p>
-            <button onClick={handleReset} className="mt-10 bg-blue-500 text-white px-10 py-6 rounded-2xl font-bold text-2xl">처음으로</button>
+             <h2 className="text-4xl font-bold text-gray-800">결과를 찾을 수 없습니다.</h2>
+             <p className="text-gray-500 mt-6 text-2xl">선택 조합: {resultKey}</p>
+             <button onClick={handleReset} className="mt-10 bg-blue-500 text-white px-10 py-6 rounded-2xl font-bold text-2xl">처음으로</button>
         </div>
       );
     }
@@ -363,14 +367,18 @@ const BoothRecommender = () => {
         <h2 className="text-6xl font-extrabold text-[#1e293b] mb-6 tracking-tight">이 부스를 추천드려요!</h2>
         <p className="text-3xl text-gray-500 font-medium mb-20">길 안내를 통해 바로 안내 받을 수 있어요</p>
 
-        <div className="flex flex-wrap justify-center gap-12 w-full">
+        {/* ★★★ 수정된 부분 ★★★ 
+          1. gap-12 -> gap-16 (간격 확대)
+          2. flex-wrap 제거 (한 줄에 3개 고정)
+        */}
+        <div className="flex justify-center gap-16 w-full"> 
           {result.booths.map((booth) => (
             <BoothCard key={booth.id} booth={booth} />
           ))}
         </div>
         
         <button onClick={handleReset} className="mt-20 bg-gray-500 text-white px-12 py-6 rounded-2xl font-bold text-2xl hover:bg-gray-600 transition">
-           처음으로 돌아가기
+            처음으로 돌아가기
         </button>
       </div>
     );
@@ -379,7 +387,7 @@ const BoothRecommender = () => {
   // 메인 렌더링
   return (
     // items-center -> items-start로 변경하고 padding-top(pt-24)을 주어 전체적으로 위로 올림
-    <div className="relative bg-[#EBEDF0] min-h-screen flex items-start justify-center pt-24 p-8 font-sans overflow-hidden selection:bg-blue-100">
+    <div className="relative flex items-start justify-center pt-24 p-8 font-sans ">
       
       {/* Home 버튼 삭제됨 */}
 
