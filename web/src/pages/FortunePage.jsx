@@ -83,17 +83,17 @@ const CardBack = ({ className = "", onClick, style, ...props }) => {
                 }
                 ${className}
             `}
-      //rgba(0, 69, 98, 0.9) 0%, rgba(202, 255, 214, 1) 100%)
       style={{
+        // 배경색을 푸른색/흰색 계열 그라데이션으로 조정
         background:
-          "linear-gradient(168deg, rgb(65, 150, 215) 0%, #e2f0ff 100%)", // Image 1의 카드 배경색
+          "linear-gradient(168deg, rgb(65, 150, 215) 0%, #e2f0ff 100%)",
         boxShadow: "0px 0px 10px rgba(63, 63, 63, 0.345)",
         ...style,
       }}
       {...props}
     >
       {/* 네잎클로버 이모지 */}
-      <span className="text-7xl text-emerald-300 opacity-90 filter drop-shadow-[0_0_8px_rgba(0,128,0,0.7)]">
+      <span className="text-8xl text-emerald-300 opacity-90 filter drop-shadow-[0_0_8px_rgba(0,128,0,0.7)]">
         🍀
       </span>
     </div>
@@ -112,7 +112,7 @@ export default function FortuneGame() {
 
   const handleStart = () => setScreen("selection");
 
-  // 이 함수는 '뒤로 가기' 버튼(좌하단)에서 사용됨. 모달에서는 닫기 기능만 수행함.
+  // 이 함수는 '뒤로 가기' 버튼(좌하단)에서 사용됨.
   const handleGoBack = () => {
     setIsAnimating(false);
     setSelectedCard(null);
@@ -125,10 +125,10 @@ export default function FortuneGame() {
     setTimeout(() => setIsAnimating(false), 500);
   };
 
-  const CARD_WIDTH = 200; // 원본 피그마 카드 너비
-  const CARD_HEIGHT = 300; // 원본 피그마 카드 높이
-  const CARD_OVERLAP_PERCENT = 0.4; // 30% 겹치기 = 70% 간격
-  const CARD_COUNT = 7;
+  const CARD_WIDTH = 250;
+  const CARD_HEIGHT = 350;
+  const CARD_OVERLAP_PERCENT = 0.6; // 30% 겹치기 = 70% 간격 (1.0 - 0.7 = 0.3 이므로, 1.0 - 0.4 = 0.6)
+  const CARD_COUNT = 8;
 
   // --- 렌더링 ---
   return (
@@ -145,7 +145,7 @@ export default function FortuneGame() {
           {/* 카드 덱 시뮬레이션: 일직선, 30% 겹침 */}
           <div
             onClick={handleStart}
-            // 카드 덱 전체 크기 계산: (카드 개수 * 겹치지 않는 부분) + 카드 하나 너비
+            // 카드 덱 전체 크기 계산 및 **px 단위 명시**
             style={{
               width: `${
                 CARD_WIDTH +
@@ -158,13 +158,16 @@ export default function FortuneGame() {
             {[...Array(CARD_COUNT)].map((_, index) => (
               <CardBack
                 key={index}
-                className={`absolute w-[${CARD_WIDTH}px] h-[${CARD_HEIGHT}px] shadow-2xl animate-card-pulse delay-[${
+                // **px 단위 명시**
+                className={`absolute shadow-2xl animate-card-pulse delay-[${
                   index * 0.1
                 }s]`}
                 style={{
-                  // 겹치지 않는 부분(30%) * index 만큼 이동
-                  left: `${index * CARD_WIDTH * CARD_OVERLAP_PERCENT}px`,
-                  zIndex: index + 1, // 앞에 있는 카드가 위에 옴
+                  width: `${CARD_WIDTH}px`,
+                  height: `${CARD_HEIGHT}px`,
+                  // **px 단위 명시**
+                  left: `${index * CARD_WIDTH * (1 - CARD_OVERLAP_PERCENT)}px`,
+                  zIndex: index + 1,
                 }}
               />
             ))}
@@ -223,10 +226,10 @@ export default function FortuneGame() {
                             }
                             flex flex-col items-center justify-center // 가운데 정렬 유지
                         `}
-            onAnimationEnd={() => setIsAnimating(false)}
+            onAnimationEnd={() => setSelectedCard(null)} // 모달 닫기
           >
             <button
-              onClick={() => setSelectedCard(null)} // X 버튼은 모달 닫기 (다시 카드 선택 화면으로)
+              onClick={handleGoBack} // X 버튼을 누르면 인트로 화면으로 돌아감
               className="absolute top-6 right-6 text-gray-400 hover:text-gray-700 transition-colors"
               aria-label="모달 닫기"
             >
