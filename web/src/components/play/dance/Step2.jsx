@@ -5,6 +5,8 @@ import React from "react";
 import AlbumCover from "./AlbumCover";
 import PlayIcon from "../../../assets/icons/play.svg?react";
 import PauseIcon from "../../../assets/icons/pause.svg?react";
+import AudioIcon from "../../../assets/icons/audio_img.svg?react";
+
 /**
  * Step2: 재생 화면
  * @param {Object} currentSong - 현재 재생중인 노래 객체
@@ -20,13 +22,19 @@ export default function Step2({
 }) {
   return (
     <div>
-      {/* 앨범 커버 이미지 (320x320px) */}
-      <div className="flex justify-center mb-8">
-        <AlbumCover
-          src={currentSong.cover}
-          alt={currentSong.title}
-          size="320px"
-        />
+      {/* 앨범 커버 이미지 + 오디오 아이콘 */}
+      <div className="flex relative items-center justify-center mb-8">
+        {/* 오디오 아이콘 (뒤쪽, 오른쪽 위) */}
+        <AudioIcon className="absolute -top-28 left-16 z-0" />
+
+        {/* 앨범 커버 (앞쪽) */}
+        <div className="relative z-10">
+          <AlbumCover
+            src={currentSong.cover}
+            alt={currentSong.title}
+            size="480px"
+          />
+        </div>
       </div>
 
       {/* 노래 정보 */}
@@ -60,7 +68,7 @@ export default function Step2({
           // 일시정지 버튼 (재생 중)
           <button
             onClick={onTogglePlay}
-            className="w-[126px] h-[126px] text-white rounded-full flex items-center justify-center bg-slate-700  shadow-2xl"
+            className="w-[126px] h-[126px] text-white rounded-full flex items-center justify-center bg-slate-700 shadow-2xl"
           >
             <PauseIcon />
           </button>

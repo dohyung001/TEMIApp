@@ -1,4 +1,5 @@
 // web/src/utils/imageComposer.js
+import { TemiBridge } from "../services/temiBridge";
 
 /**
  * 원본 사진에 테마 효과 적용 (프레임 이미지 없이)
@@ -78,8 +79,9 @@ export async function composeImageWithTheme(photoSrc, theme) {
   });
 }
 
-// COSS 테마 (파란색 배경 + COSS 로고 이미지)
-function applyOceanTheme(
+// COSS 테마 (파란색 배경 + COSS 로고 이미지)// imageComposer.js
+
+async function applyOceanTheme(
   ctx,
   canvas,
   photo,
@@ -101,26 +103,53 @@ function applyOceanTheme(
   // 원본 사진 그리기
   ctx.drawImage(photo, paddingX, paddingTop, photoWidth, photoHeight);
 
-  // COSS 로고 이미지 로드
-  const cossLogo = new Image();
-  cossLogo.onload = () => {
-    const logoHeight = 120;
-    const logoWidth = cossLogo.width * (logoHeight / cossLogo.height);
-    const logoX = (width - logoWidth) / 2;
-    const logoY = height - paddingBottom / 2 - logoHeight / 2;
+  try {
+    let cossLogoSrc;
 
-    ctx.drawImage(cossLogo, logoX, logoY, logoWidth, logoHeight);
-    resolve(canvas.toDataURL("image/jpeg", 0.95));
-  };
-  cossLogo.onerror = () => {
-    console.error("COSS 로고 로딩 실패, 텍스트로 대체");
+    // ✅ Temi 환경
+    if (window.Temi && window.Temi.loadThemeImage) {
+      cossLogoSrc = window.Temi.loadThemeImage("coss.png");
+    }
+    // ✅ 웹 환경
+    else {
+      cossLogoSrc = "/img/coss.png";
+    }
+
+    if (!cossLogoSrc) {
+      throw new Error("이미지 로드 실패");
+    }
+
+    const cossLogo = new Image();
+    cossLogo.onload = () => {
+      const logoHeight = 120;
+      const logoWidth = cossLogo.width * (logoHeight / cossLogo.height);
+      const logoX = (width - logoWidth) / 2;
+      const logoY = height - paddingBottom / 2 - logoHeight / 2;
+
+      ctx.drawImage(cossLogo, logoX, logoY, logoWidth, logoHeight);
+      resolve(canvas.toDataURL("image/jpeg", 0.95));
+    };
+
+    cossLogo.onerror = () => {
+      console.error("COSS 로고 렌더링 실패, 텍스트로 대체");
+      // 텍스트 폴백
+      ctx.font = "bold 80px Arial";
+      ctx.fillStyle = "#0369A1";
+      ctx.textAlign = "center";
+      ctx.fillText("COSS", width / 2, height - paddingBottom / 2 + 30);
+      resolve(canvas.toDataURL("image/jpeg", 0.95));
+    };
+
+    cossLogo.src = cossLogoSrc;
+  } catch (error) {
+    console.error("COSS 로고 로드 실패:", error);
+    // 텍스트 폴백
     ctx.font = "bold 80px Arial";
     ctx.fillStyle = "#0369A1";
     ctx.textAlign = "center";
     ctx.fillText("COSS", width / 2, height - paddingBottom / 2 + 30);
     resolve(canvas.toDataURL("image/jpeg", 0.95));
-  };
-  cossLogo.src = "/img/coss.png";
+  }
 }
 
 // 클로버 테마 (연두색 배경 + 클로버 - 우측 하단)

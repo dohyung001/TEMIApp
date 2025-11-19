@@ -2,7 +2,12 @@ package com.kw.temireactapp
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.os.Bundle
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.util.Base64
 import android.util.Log
 import android.webkit.JavascriptInterface
@@ -17,11 +22,11 @@ import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
-import javax.net.ssl.HostnameVerifier
 import java.security.cert.X509Certificate
 
 class TemiInterface(
@@ -31,6 +36,10 @@ class TemiInterface(
     private val prefs: SharedPreferences =
         activity.getSharedPreferences("TemiCustomSettings", Context.MODE_PRIVATE)
 
+    // ✅ 음성 인식 관련 변수 추가
+    private var speechRecognizer: SpeechRecognizer? = null
+    private var isListening = false
+
     // ========== 음성 ==========
 
     @JavascriptInterface
@@ -39,7 +48,157 @@ class TemiInterface(
         robot.speak(ttsRequest)
     }
 
-    // ========== Asset 오디오 경로 (NEW) ==========
+    // ========== 음성 인식 (Native) ==========
+
+    @JavascriptInterface
+    fun startSpeechRecognition() {
+        Log.d("TemiInterface", "🎤 startSpeechRecognition 호출됨")
+
+        activity.runOnUiThread {
+            try {
+                // 이미 실행 중이면 중단
+                if (isListening) {
+                    Log.w("TemiInterface", "⚠️ 이미 음성 인식 실행 중")
+                    return@runOnUiThread
+                }
+
+                // SpeechRecognizer 초기화
+                if (speechRecognizer == null) {
+                    speechRecognizer = SpeechRecognizer.createSpeechRecognizer(activity)
+                    setupRecognitionListener()
+                    Log.d("TemiInterface", "✅ SpeechRecognizer 생성됨")
+                }
+
+                // Intent 설정
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR")
+                    putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                    putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
+                }
+
+                // 음성 인식 시작
+                speechRecognizer?.startListening(intent)
+                isListening = true
+                Log.d("TemiInterface", "✅ 음성 인식 시작됨")
+
+            } catch (e: Exception) {
+                Log.e("TemiInterface", "❌ 음성 인식 시작 실패", e)
+                callJavaScript("window.onSpeechError", "\"start_failed\"")
+                isListening = false
+            }
+        }
+    }
+
+    @JavascriptInterface
+    fun stopSpeechRecognition() {
+        Log.d("TemiInterface", "🛑 stopSpeechRecognition 호출됨")
+
+        activity.runOnUiThread {
+            try {
+                speechRecognizer?.stopListening()
+                isListening = false
+                Log.d("TemiInterface", "✅ 음성 인식 중지됨")
+            } catch (e: Exception) {
+                Log.e("TemiInterface", "❌ 음성 인식 중지 실패", e)
+            }
+        }
+    }
+
+    private fun setupRecognitionListener() {
+        speechRecognizer?.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) {
+                Log.d("TemiInterface", "✅ 음성 인식 준비 완료")
+                callJavaScript("window.onSpeechReady", "")
+            }
+
+            override fun onBeginningOfSpeech() {
+                Log.d("TemiInterface", "🗣️ 음성 감지 시작")
+                callJavaScript("window.onSpeechStart", "")
+            }
+
+            override fun onRmsChanged(rmsdB: Float) {}
+
+            override fun onBufferReceived(buffer: ByteArray?) {}
+
+            override fun onEndOfSpeech() {
+                Log.d("TemiInterface", "🛑 음성 입력 종료")
+                isListening = false
+                callJavaScript("window.onSpeechEnd", "")
+            }
+
+            override fun onError(error: Int) {
+                isListening = false
+
+                val errorMsg = when (error) {
+                    SpeechRecognizer.ERROR_AUDIO -> "audio"
+                    SpeechRecognizer.ERROR_CLIENT -> "client"
+                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "no_permission"
+                    SpeechRecognizer.ERROR_NETWORK -> "network"
+                    SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "network_timeout"
+                    SpeechRecognizer.ERROR_NO_MATCH -> "no_match"
+                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "busy"
+                    SpeechRecognizer.ERROR_SERVER -> "server"
+                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "no_speech"
+                    else -> "unknown"
+                }
+
+                Log.e("TemiInterface", "❌ 음성 인식 오류: $errorMsg (코드: $error)")
+                callJavaScript("window.onSpeechError", "\"$errorMsg\"")
+            }
+
+            override fun onResults(results: Bundle?) {
+                isListening = false
+
+                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                if (matches != null && matches.isNotEmpty()) {
+                    val text = matches[0]
+                    Log.d("TemiInterface", "✅ 인식 결과: $text")
+
+                    // JSON 이스케이프 처리
+                    val escapedText = text
+                        .replace("\\", "\\\\")
+                        .replace("\"", "\\\"")
+                        .replace("\n", "\\n")
+                        .replace("\r", "\\r")
+                        .replace("\t", "\\t")
+
+                    callJavaScript("window.onSpeechResult", "\"$escapedText\"")
+                } else {
+                    Log.w("TemiInterface", "⚠️ 인식 결과 없음")
+                    callJavaScript("window.onSpeechError", "\"no_match\"")
+                }
+            }
+
+            override fun onPartialResults(partialResults: Bundle?) {}
+
+            override fun onEvent(eventType: Int, params: Bundle?) {}
+        })
+    }
+
+    private fun callJavaScript(functionName: String, param: String) {
+        activity.runOnUiThread {
+            val script = if (param.isEmpty()) {
+                "$functionName && $functionName()"
+            } else {
+                "$functionName && $functionName($param)"
+            }
+
+            val mainActivity = activity as? MainActivity
+            mainActivity?.webView?.evaluateJavascript(script) { result ->
+                Log.d("TemiInterface", "JS 실행 결과: $result")
+            }
+        }
+    }
+
+    fun destroy() {
+        speechRecognizer?.destroy()
+        speechRecognizer = null
+        isListening = false
+        Log.d("TemiInterface", "🗑️ SpeechRecognizer 정리됨")
+    }
+
+    // ========== Asset 오디오 경로 ==========
 
     @JavascriptInterface
     fun getAudioPath(filename: String): String {
@@ -55,19 +214,19 @@ class TemiInterface(
             val bytes = inputStream.readBytes()
             inputStream.close()
 
-            "data:image/jpeg;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
+            "data:image/png;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
         } catch (e: Exception) {
             Log.e("TemiInterface", "이미지 로드 실패: $filename", e)
             ""
         }
     }
 
-    // ========== 부스 이미지 로딩 (NEW) ==========
+    // ========== 부스 이미지 로딩 ==========
 
     @JavascriptInterface
     fun loadBoothImage(filename: String): String {
         return try {
-            val inputStream = activity.assets.open("booths/$filename")
+            val inputStream = activity.assets.open("$filename")
             val bytes = inputStream.readBytes()
             inputStream.close()
 
@@ -78,7 +237,7 @@ class TemiInterface(
         }
     }
 
-    // ========== 사진촬영 테마 이미지 로딩 (NEW) ==========
+    // ========== 사진촬영 테마 이미지 로딩 ==========
 
     @JavascriptInterface
     fun loadThemeImage(filename: String): String {
@@ -103,7 +262,6 @@ class TemiInterface(
 
             val apiKey = "e947920cd2d87b83c74bfdb195b2a18f"
 
-            // ✅ SSL 인증서 검증 완전히 우회
             val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
                 override fun checkClientTrusted(chain: Array<X509Certificate>?, authType: String?) {}
                 override fun checkServerTrusted(chain: Array<X509Certificate>?, authType: String?) {}
@@ -116,7 +274,6 @@ class TemiInterface(
             val url = URL("https://api.imgbb.com/1/upload")
             val connection = url.openConnection() as HttpsURLConnection
 
-            // ✅ SSL 설정 적용
             connection.sslSocketFactory = sslContext.socketFactory
             connection.hostnameVerifier = HostnameVerifier { _, _ -> true }
 
@@ -126,7 +283,6 @@ class TemiInterface(
             connection.readTimeout = 30000
             connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
 
-            // Base64 데이터 추출
             val cleanBase64 = if (base64Image.contains("base64,")) {
                 base64Image.substringAfter("base64,")
             } else {

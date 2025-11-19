@@ -10,7 +10,7 @@ export default function Step3({
   return (
     <div className="flex flex-col items-center justify-center min-h-screenp-8">
       {/* 메인 컨테이너 - 파란 테두리 박스 */}
-      <div className="bg-white border-[6px] border-blue-400 rounded-3xl shadow-2xl p-2 mb-4 max-w-4xl">
+      <div className="bg-white border-[6px] border-blue-400 rounded-3xl shadow-2xl p-2 my-4 max-w-4xl">
         {/* 촬영된 사진 미리보기 */}
         <div className="bg-gray-600 rounded-2xl overflow-hidden  shadow-xl">
           <img

@@ -27,35 +27,55 @@ export default function NavigationStep2() {
     bioHealth: bioHealthBoothData,
   };
 
+  // ✅ 카테고리별 설명 텍스트
+  const categoryDescriptions = {
+    energy: "에너지신사업, 이차전지, 에코업, 그린바이오",
+    ict: "인공지능, 빅데이터, 데이터보안활용융합, 사물인터넷, 차세대통신, 실감미디어",
+    advanced: "차세대반도체, 반도체소부장, 첨단소재나노융합, 차세대디스플레이",
+    mobility: "지능형로봇, 지능형로봇, 미래자동차, 항공드론",
+    bioHealth: "바이오헬스",
+  };
+
   const data = dataMap[selected];
 
   // 이미지 로드
-  // 이미지 로드
   useEffect(() => {
-    const loadBoothImages = async () => {
-      const images = {};
+    const images = {};
 
-      if (window.TemiInterface) {
-        // Temi 환경: Android Base64 로드
-        data.forEach((booth) => {
-          if (booth.img) {
-            const base64 = window.TemiInterface.getImageBase64(booth.img);
-            images[booth.id] = base64;
-          }
-        });
-      } else {
-        // 개발 환경: public 폴더 경로
-        data.forEach((booth) => {
-          if (booth.img) {
-            images[booth.id] = `/${booth.img}`; // /img/e/e-1.png
-          }
-        });
-      }
-      console.log(images);
-      setBoothImages(images);
-    };
+    if (window.Temi && window.Temi.loadBoothImage) {
+      // ✅ Temi 환경: Android에서 Base64로 로드
+      console.log("🤖 Temi: 부스 이미지 로딩 시작");
 
-    loadBoothImages();
+      data.forEach((booth) => {
+        if (booth.img) {
+          try {
+            const imageData = window.Temi.loadBoothImage(booth.img);
+
+            if (imageData) {
+              images[booth.id] = imageData.startsWith("data:")
+                ? imageData
+                : `data:image/jpeg;base64,${imageData}`;
+            } else {
+              console.error(`❌ 로드 실패: ${booth.img}`);
+            }
+          } catch (error) {
+            console.error(`❌ 에러: ${booth.img}`, error);
+          }
+        }
+      });
+    } else {
+      // ✅ 개발 환경: 일반 경로 사용
+      console.log("🌐 개발 환경: 일반 경로 사용");
+
+      data.forEach((booth) => {
+        if (booth.img) {
+          images[booth.id] = `/${booth.img}`;
+        }
+      });
+    }
+
+    console.log("📸 로드된 이미지:", images);
+    setBoothImages(images);
   }, [data]);
 
   // 검색 필터링
@@ -66,8 +86,6 @@ export default function NavigationStep2() {
       booth.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
     );
   }, [data, debouncedSearchTerm]);
-
-  // Tailwind 클래스를 완전히 작성
 
   // 길안내 시작
   const handleNavigate = (booth) => {
@@ -150,7 +168,7 @@ export default function NavigationStep2() {
             체험 부스 및 경진 대회
           </h1>
           <h2 className="text-3xl font-bold text-slate-600">
-            에너지신사업, 이차전지, 에코업, 그린바이오
+            {categoryDescriptions[selected]}
           </h2>
         </div>
 

@@ -64,9 +64,9 @@ export default function Step2({ onCapture }) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center relative min-h-screen py-8">
+    <div className="flex flex-col items-center justify-center relative py-8">
       {/* 안내 문구 */}
-      <div className="w-full text-center mb-6">
+      <div className="w-full text-center my-6">
         <h2 className="text-3xl text-slate-600 font-medium">
           카메라 버튼을 누른 후 3초 후에 사진이 촬영됩니다
         </h2>

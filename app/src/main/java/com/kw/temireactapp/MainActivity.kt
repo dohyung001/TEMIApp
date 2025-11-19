@@ -16,8 +16,9 @@ import org.json.JSONObject
 
 class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
 
-    private lateinit var webView: WebView
+    lateinit var webView: WebView  // ✅ private 제거
     private var robot: Robot? = null
+    private var temiInterface: TemiInterface? = null  // ✅ 추가
 
     companion object {
         private const val PERMISSIONS_REQUEST_CODE = 100
@@ -60,7 +61,6 @@ class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
             permissionsToRequest.add(Manifest.permission.RECORD_AUDIO)
         }
 
-        // ✅ INTERNET 권한도 추가 (런타임 불필요, Manifest만)
         if (permissionsToRequest.isNotEmpty()) {
             ActivityCompat.requestPermissions(
                 this,
@@ -83,7 +83,6 @@ class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
                     grantResults.all { it == PackageManager.PERMISSION_GRANTED }
                 ) {
                     Log.d("MainActivity", "✅ 모든 권한 허용됨")
-                    // ✅ 권한 승인 후 페이지 새로고침
                     webView.reload()
                 } else {
                     Log.e("MainActivity", "❌ 권한 거부됨")
@@ -121,8 +120,6 @@ class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
             mediaPlaybackRequiresUserGesture = false
             cacheMode = WebSettings.LOAD_NO_CACHE
             setGeolocationEnabled(true)
-
-            // ✅✅✅ 추가: 미디어 스트림 허용
             javaScriptCanOpenWindowsAutomatically = true
         }
 
@@ -140,7 +137,6 @@ class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
                 }
             }
 
-            // ✅✅✅ 추가: 에러 로그
             override fun onPermissionRequestCanceled(request: PermissionRequest?) {
                 Log.e("MainActivity", "❌ 권한 요청 취소됨")
             }
@@ -154,7 +150,9 @@ class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
         }
 
         robot?.let {
-            webView.addJavascriptInterface(TemiInterface(this, it), "Temi")
+            val temiInterfaceInstance = TemiInterface(this, it)
+            temiInterface = temiInterfaceInstance  // ✅ 저장
+            webView.addJavascriptInterface(temiInterfaceInstance, "Temi")
             Log.d("MainActivity", "✅ Temi Interface attached")
         }
 
@@ -193,6 +191,7 @@ class MainActivity : AppCompatActivity(), OnGoToLocationStatusChangedListener {
 
     override fun onDestroy() {
         super.onDestroy()
+        temiInterface?.destroy()  // ✅ SpeechRecognizer 정리
         webView.destroy()
     }
 }
