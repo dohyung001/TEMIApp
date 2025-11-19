@@ -39,14 +39,15 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
 
     try {
       TemiBridge.startSpeechRecognition();
+      console.log("✅ TemiBridge.startSpeechRecognition() 호출 성공");
 
-      // ✅ 8초 타임아웃 설정
+      // ✅ 10초 타임아웃 설정 (8초 → 10초로 늘림)
       if (listeningTimeoutRef.current) {
         clearTimeout(listeningTimeoutRef.current);
       }
 
       listeningTimeoutRef.current = setTimeout(() => {
-        console.log("⏰ [Timeout] 8초 동안 음성 감지 안됨, 자동 종료");
+        console.log("⏰ [Timeout] 10초 동안 음성 감지 안됨, 자동 종료");
 
         isRecognitionActiveRef.current = false;
         currentStepRef.current = "idle";
@@ -54,20 +55,11 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
 
         TemiBridge.stopSpeechRecognition();
         TemiBridge.showToast("음성이 감지되지 않아 대화가 종료되었습니다");
-      }, 8000);
+      }, 10000); // 10초로 늘림
     } catch (error) {
       console.error("❌ [startListening] 실패:", error);
 
-      // ✅✅✅ Temi 환경에서 "already started" 에러는 무시
-      if (
-        window.Temi &&
-        error.message &&
-        error.message.includes("already started")
-      ) {
-        console.warn("⚠️ Temi 환경: 이미 시작됨 에러 무시");
-        return;
-      }
-
+      // ✅ 에러 무시 제거 - 모든 에러를 표시
       isRecognitionActiveRef.current = false;
       currentStepRef.current = "idle";
       setCurrentStep("idle");
@@ -75,6 +67,9 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
       if (listeningTimeoutRef.current) {
         clearTimeout(listeningTimeoutRef.current);
       }
+
+      // ✅ 사용자에게 에러 표시
+      TemiBridge.showToast(`음성 인식 시작 실패: ${error.message || error}`);
     }
   }, []);
 
@@ -88,9 +83,10 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
       setMessages([]);
       setCurrentStep("idle");
 
+      // ✅ 500ms 딜레이 후 시작
       setTimeout(() => {
         startListening();
-      }, 300);
+      }, 500);
     } else {
       console.log("🔴 [Overlay] 닫힘 - 정리");
 
@@ -99,6 +95,13 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
       }
       if (listeningTimeoutRef.current) {
         clearTimeout(listeningTimeoutRef.current);
+      }
+
+      // ✅ 음성 인식 중지
+      try {
+        TemiBridge.stopSpeechRecognition();
+      } catch (e) {
+        console.warn("stopSpeechRecognition 실패 (무시):", e);
       }
 
       isRecognitionActiveRef.current = false;
@@ -116,20 +119,24 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
     console.log("🎤 [Overlay] 음성 인식 콜백 등록");
 
     window.onSpeechReady = () => {
-      console.log("✅ [onSpeechReady]");
+      console.log("✅ [onSpeechReady] 음성 인식 준비 완료");
+      TemiBridge.showToast("듣고 있어요! 말씀해주세요 🎤");
     };
 
     window.onSpeechStart = () => {
-      console.log("🗣️ [onSpeechStart]");
+      console.log("🗣️ [onSpeechStart] 음성 감지 시작!");
 
       if (listeningTimeoutRef.current) {
+        console.log("✅ 타임아웃 취소 (음성 감지됨)");
         clearTimeout(listeningTimeoutRef.current);
         listeningTimeoutRef.current = null;
       }
+
+      TemiBridge.showToast("음성이 감지되었어요!");
     };
 
     window.onSpeechEnd = () => {
-      console.log("🛑 [onSpeechEnd]");
+      console.log("🛑 [onSpeechEnd] 음성 입력 종료");
 
       isRecognitionActiveRef.current = false;
 
@@ -140,7 +147,7 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
     };
 
     window.onSpeechResult = async (text) => {
-      console.log("✅ [onSpeechResult]:", text);
+      console.log("✅ [onSpeechResult] 인식 결과:", text);
 
       isRecognitionActiveRef.current = false;
       if (listeningTimeoutRef.current) {
@@ -152,35 +159,49 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
       currentStepRef.current = "thinking";
       setCurrentStep("thinking");
 
-      const response = await callGeminiAPI(text);
-      console.log("💡 [AI 응답]:", response);
+      // ✅ Gemini API 호출
+      try {
+        const response = await callGeminiAPI(text);
+        console.log("💡 [AI 응답]:", response);
 
-      setMessages((prev) => [...prev, { role: "assistant", text: response }]);
-      currentStepRef.current = "speaking";
-      setCurrentStep("speaking");
+        setMessages((prev) => [...prev, { role: "assistant", text: response }]);
+        currentStepRef.current = "speaking";
+        setCurrentStep("speaking");
 
-      TemiBridge.speak(response);
+        TemiBridge.speak(response);
 
-      const estimatedDuration = response.length * 100;
+        const estimatedDuration = response.length * 100;
 
-      if (ttsTimeoutRef.current) {
-        clearTimeout(ttsTimeoutRef.current);
-      }
+        if (ttsTimeoutRef.current) {
+          clearTimeout(ttsTimeoutRef.current);
+        }
 
-      ttsTimeoutRef.current = setTimeout(() => {
-        console.log("🔄 [TTS완료] 다시 듣기");
+        ttsTimeoutRef.current = setTimeout(() => {
+          console.log("🔄 [TTS완료] 다시 듣기");
+
+          currentStepRef.current = "idle";
+          setCurrentStep("idle");
+
+          setTimeout(() => {
+            startListening();
+          }, 500);
+        }, estimatedDuration + 1000);
+      } catch (error) {
+        console.error("❌ [Gemini API] 오류:", error);
+        TemiBridge.showToast("AI 응답 생성 실패");
 
         currentStepRef.current = "idle";
         setCurrentStep("idle");
 
+        // 재시도
         setTimeout(() => {
           startListening();
-        }, 500);
-      }, estimatedDuration + 1000);
+        }, 2000);
+      }
     };
 
     window.onSpeechError = (error) => {
-      console.error("❌ [onSpeechError]:", error);
+      console.error("❌ [onSpeechError] 오류:", error);
 
       isRecognitionActiveRef.current = false;
       if (listeningTimeoutRef.current) {
@@ -191,21 +212,7 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
       currentStepRef.current = "idle";
       setCurrentStep("idle");
 
-      // ✅✅✅ Temi 환경에서 특정 에러는 무시
-      if (window.Temi) {
-        if (error === "audio-capture" || error === "not-allowed") {
-          console.warn("⚠️ Temi 환경: 권한 관련 에러 무시하고 계속 진행");
-          return; // 에러 메시지 표시 안함
-        }
-
-        // no_speech 에러만 사용자에게 알림
-        if (error === "no_speech") {
-          TemiBridge.showToast("음성이 감지되지 않았어요. 다시 시도해주세요!");
-          return;
-        }
-      }
-
-      // 브라우저 환경에서는 모든 에러 표시
+      // ✅ 에러 메시지 매핑
       let errorMessage = "음성 인식 오류가 발생했어요";
 
       switch (error) {
@@ -225,21 +232,25 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
         case "busy":
           errorMessage = "음성 인식이 사용 중이에요";
           break;
+        case "audio":
+          errorMessage = "오디오 캡처 오류가 발생했어요";
+          break;
+        case "not_available":
+          errorMessage = "음성 인식 서비스를 사용할 수 없어요";
+          break;
       }
 
       console.log(`📢 [오류] ${errorMessage}`);
+      TemiBridge.showToast(errorMessage);
 
-      if (window.Temi) {
-        TemiBridge.showToast(errorMessage);
-      } else {
-        console.log(`[개발모드] ${errorMessage}`);
-      }
-
-      // no_speech, busy 외에는 재시도
-      if (error !== "no_speech" && error !== "busy") {
+      // ✅ 치명적 오류(권한, 서비스 없음)가 아니면 재시도
+      if (error !== "no_permission" && error !== "not_available") {
+        console.log("🔄 2초 후 재시도");
         setTimeout(() => {
           startListening();
         }, 2000);
+      } else {
+        console.log("🔴 치명적 오류 - 재시도 안함");
       }
     };
 
