@@ -35,7 +35,7 @@ const advancedBoothData = [
   },
   {
     id: "a-3",
-    name: "T-OLED 액자",
+    name: "티프레임 스냅샷 : 테이크어샷 포토슛 팝팝팝!",
     img: "img/a/a-3.jpg",
     category: "첨단 제조 및 소재",
     subCategory: "차세대디스플레이",
@@ -147,7 +147,6 @@ const advancedBoothData = [
       "1. 오염수를 제작한다. 2. 친환경 소재 모링가 추출액으로 오염수를 침전시킨다. 3. 정수된 물의 탁한 정도를 측정하여 비교한다.",
     location: "첨단소재나노융합 부스",
   },
-
 ];
 
 export default advancedBoothData;
