@@ -81,12 +81,12 @@ export default function BoothModal({ booth, boothImage, onClose, category }) {
           }}
         >
           {/* 부스 이미지 */}
-          <div className="rounded-2xl p-4 mb-6 bg-white">
+          <div className={`rounded-2xl p-4 mb-6 bg-${colorClass}`}>
             {boothImage ? (
               <img
                 src={boothImage}
                 alt={booth.name}
-                className="w-[90%] h-auto object-contain rounded-xl mx-auto"
+                className="w-[80%] h-auto max-h-[700px] object-contain rounded-xl mx-auto"
               />
             ) : (
               <div className="w-[90%] h-[500px] bg-gray-200 rounded-xl flex items-center justify-center text-gray-400 text-3xl">

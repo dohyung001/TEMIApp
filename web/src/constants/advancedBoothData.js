@@ -51,7 +51,7 @@ const advancedBoothData = [
   },
   {
     id: "a-4",
-    name: "차세대디스플레이 공정 XR 체험",
+    name: "차세대디스플레이 FAB : 디스플레이 공정속으로",
     img: "img/a/a-4.jpg",
     category: "첨단 제조 및 소재",
     subCategory: "차세대디스플레이",
