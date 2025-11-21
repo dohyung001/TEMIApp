@@ -14,7 +14,8 @@ import NotFoundPage from "../pages/NotFoundPage";
 import TestPage from "../pages/TestPage";
 import TestSizePage from "../pages/TestSizePage";
 
-import DancePage from "../components/play/DancePage";
+import DancePage from "../pages/DancePage";
+import DancePlayPage from "../components/dance/DancePlayPage";
 import NavigattionStep2 from "../components/navigation/NavigattionStep2";
 const router = createBrowserRouter([
   // 나머지 페이지들 (PageLayout)
@@ -25,8 +26,9 @@ const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
       { path: "/navigation", element: <NavigationPage /> }, // 길 안내
       { path: "/navigation/step2", element: <NavigattionStep2 /> },
-      { path: "/play", element: <PlayPage /> }, // 테미랑 놀기
-      { path: "/play/dance", element: <DancePage /> },
+
+      { path: "/dance", element: <DancePage /> },
+      { path: "/dance/:songId", element: <DancePlayPage /> },
       { path: "/photo", element: <PhotoPage /> }, // 사진
 
       { path: "/info", element: <InfoPage /> }, // 행사 및 부스 안내

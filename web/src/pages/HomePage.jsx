@@ -26,7 +26,7 @@ export default function HomePage() {
       id: "chat",
       icon: <DanceIcon />,
       title: "노래 맞춰 <br/>춤 추기",
-      path: "/play/dance",
+      path: "/dance",
     },
     {
       id: "fortune",

@@ -34,6 +34,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <meta-data
+            android:name="com.robotemi.sdk.metadata.KIOSK"
+            android:value="true" />
+
+        <!-- 2. NLU 오버라이드 - Temi 기본 응답 차단 -->
+        <meta-data
+            android:name="com.robotemi.sdk.metadata.OVERRIDE_NLU"
+            android:value="true" />
+
+        <!-- 3. Conversation Layer 오버라이드 - Temi UI 차단 -->
+        <meta-data
+            android:name="com.robotemi.sdk.metadata.OVERRIDE_CONVERSATION_LAYER"
+            android:value="true" />
     </application>
 
 </manifest>

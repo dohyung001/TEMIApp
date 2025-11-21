@@ -165,7 +165,7 @@ export default function NavigationStep2() {
       <div className="w-full px-20 flex flex-col h-[1000px]">
         <div className="flex flex-col w-full gap-2 pb-6 border-b border-slate-800 flex-shrink-0">
           <h1 className="text-5xl font-bold text-slate-800">
-            체험 부스 및 경진 대회
+            체험 프로그램 및 부스 안내
           </h1>
           <h2 className="text-3xl font-bold text-slate-600">
             {categoryDescriptions[selected]}

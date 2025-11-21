@@ -2,18 +2,14 @@ package com.kw.temireactapp
 
 import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
-import android.os.Bundle
-import android.speech.RecognitionListener
-import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
 import android.util.Base64
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.widget.Toast
 import com.robotemi.sdk.Robot
 import com.robotemi.sdk.TtsRequest
+import com.robotemi.sdk.SttLanguage  // ✅ 올바른 import
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -33,147 +29,115 @@ class TemiInterface(
     private val activity: Activity,
     private val robot: Robot
 ) {
+
     private val prefs: SharedPreferences =
         activity.getSharedPreferences("TemiCustomSettings", Context.MODE_PRIVATE)
 
-    // ✅ 음성 인식 관련 변수 추가
-    private var speechRecognizer: SpeechRecognizer? = null
     private var isListening = false
 
-    // ========== 음성 ==========
-
-    @JavascriptInterface
-    fun speak(text: String) {
-        val ttsRequest = TtsRequest.create(text, false)
-        robot.speak(ttsRequest)
+    companion object {
+        private const val TAG = "TemiInterface"
     }
 
-    // ========== 음성 인식 (Native) ==========
+    // ✅ AsrListener 구현
+    private val asrListener = object : Robot.AsrListener {
+        override fun onAsrResult(asrResult: String, sttLanguage: SttLanguage) {
+            Log.d(TAG, "✅✅ [Temi ASR] 인식 결과: \"$asrResult\"")
+
+            isListening = false
+
+            // ✅ 안전장치: 혹시 모를 Temi 응답 즉시 차단
+            try {
+                robot.finishConversation()
+                robot.cancelAllTtsRequests()
+                Log.d(TAG, "🛑 안전장치: Temi 대화 시스템 중단")
+            } catch (e: Exception) {
+                Log.w(TAG, "⚠️ 대화 중단 실패 (무시): ${e.message}")
+            }
+
+            // JSON 이스케이프 처리
+            val escapedText = asrResult
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t")
+
+            // JavaScript로 전달
+            callJavaScript("window.onSpeechResult", "\"$escapedText\"")
+
+            showToast("인식됨: $asrResult")
+        }
+    }
+
+    init {
+        Log.d(TAG, "🚀 TemiInterface 초기화 시작")
+
+        // ✅ Temi ASR 리스너 등록
+        robot.addAsrListener(asrListener)
+        Log.d(TAG, "✅ ASR 리스너 등록됨")
+
+        // ✅✅✅ 이 줄 추가! (Kiosk 앱 요청)
+        robot.requestToBeKioskApp()
+        Log.d(TAG, "✅ Kiosk 앱 요청 완료")
+
+        // ✅ 한국어 ASR 설정
+        try {
+            robot.setAsrLanguages(listOf(SttLanguage.KO_KR))
+            Log.d(TAG, "✅ ASR 언어 설정 완료 (한국어)")
+        } catch (e: Exception) {
+            Log.w(TAG, "⚠️ ASR 언어 설정 실패 (기본 언어 사용): ${e.message}")
+        }
+
+        Log.d(TAG, "✅ Temi ASR 초기화 완료 (NLU + UI 오버라이드 모드)")
+    }
+
+    // ========== 음성 인식 시작 (Temi SDK 사용) ==========
 
     @JavascriptInterface
     fun startSpeechRecognition() {
-        Log.d("TemiInterface", "🎤 startSpeechRecognition 호출됨")
+        Log.d(TAG, "🎤 ========== Temi ASR 시작 ==========")
 
         activity.runOnUiThread {
             try {
-                // 이미 실행 중이면 중단
                 if (isListening) {
-                    Log.w("TemiInterface", "⚠️ 이미 음성 인식 실행 중")
+                    Log.w(TAG, "⚠️ 이미 듣는 중, 무시")
                     return@runOnUiThread
                 }
 
-                // SpeechRecognizer 초기화
-                if (speechRecognizer == null) {
-                    speechRecognizer = SpeechRecognizer.createSpeechRecognizer(activity)
-                    setupRecognitionListener()
-                    Log.d("TemiInterface", "✅ SpeechRecognizer 생성됨")
-                }
-
-                // Intent 설정
-                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR")
-                    putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-                    putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
-                }
-
-                // 음성 인식 시작
-                speechRecognizer?.startListening(intent)
                 isListening = true
-                Log.d("TemiInterface", "✅ 음성 인식 시작됨")
+
+                // ✅ Temi의 wakeup() 메서드 호출 (한국어)
+                robot.wakeup(listOf(SttLanguage.KO_KR))
+
+                Log.d(TAG, "✅ Temi wakeup() 호출 성공")
+
+                // JavaScript에 준비 완료 알림
+                callJavaScript("window.onSpeechReady", "")
+                showToast("듣고 있어요! 🎤")
 
             } catch (e: Exception) {
-                Log.e("TemiInterface", "❌ 음성 인식 시작 실패", e)
-                callJavaScript("window.onSpeechError", "\"start_failed\"")
+                Log.e(TAG, "❌ Temi ASR 시작 실패", e)
                 isListening = false
+                callJavaScript("window.onSpeechError", "\"start_failed\"")
+                showToast("음성 인식 시작 실패: ${e.message}")
             }
         }
     }
 
     @JavascriptInterface
     fun stopSpeechRecognition() {
-        Log.d("TemiInterface", "🛑 stopSpeechRecognition 호출됨")
+        Log.d(TAG, "🛑 Temi ASR 중지")
 
         activity.runOnUiThread {
             try {
-                speechRecognizer?.stopListening()
                 isListening = false
-                Log.d("TemiInterface", "✅ 음성 인식 중지됨")
+                robot.finishConversation()
+                Log.d(TAG, "✅ Temi conversation 종료됨")
             } catch (e: Exception) {
-                Log.e("TemiInterface", "❌ 음성 인식 중지 실패", e)
+                Log.e(TAG, "❌ ASR 중지 실패", e)
             }
         }
-    }
-
-    private fun setupRecognitionListener() {
-        speechRecognizer?.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) {
-                Log.d("TemiInterface", "✅ 음성 인식 준비 완료")
-                callJavaScript("window.onSpeechReady", "")
-            }
-
-            override fun onBeginningOfSpeech() {
-                Log.d("TemiInterface", "🗣️ 음성 감지 시작")
-                callJavaScript("window.onSpeechStart", "")
-            }
-
-            override fun onRmsChanged(rmsdB: Float) {}
-
-            override fun onBufferReceived(buffer: ByteArray?) {}
-
-            override fun onEndOfSpeech() {
-                Log.d("TemiInterface", "🛑 음성 입력 종료")
-                isListening = false
-                callJavaScript("window.onSpeechEnd", "")
-            }
-
-            override fun onError(error: Int) {
-                isListening = false
-
-                val errorMsg = when (error) {
-                    SpeechRecognizer.ERROR_AUDIO -> "audio"
-                    SpeechRecognizer.ERROR_CLIENT -> "client"
-                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "no_permission"
-                    SpeechRecognizer.ERROR_NETWORK -> "network"
-                    SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "network_timeout"
-                    SpeechRecognizer.ERROR_NO_MATCH -> "no_match"
-                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "busy"
-                    SpeechRecognizer.ERROR_SERVER -> "server"
-                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "no_speech"
-                    else -> "unknown"
-                }
-
-                Log.e("TemiInterface", "❌ 음성 인식 오류: $errorMsg (코드: $error)")
-                callJavaScript("window.onSpeechError", "\"$errorMsg\"")
-            }
-
-            override fun onResults(results: Bundle?) {
-                isListening = false
-
-                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                if (matches != null && matches.isNotEmpty()) {
-                    val text = matches[0]
-                    Log.d("TemiInterface", "✅ 인식 결과: $text")
-
-                    // JSON 이스케이프 처리
-                    val escapedText = text
-                        .replace("\\", "\\\\")
-                        .replace("\"", "\\\"")
-                        .replace("\n", "\\n")
-                        .replace("\r", "\\r")
-                        .replace("\t", "\\t")
-
-                    callJavaScript("window.onSpeechResult", "\"$escapedText\"")
-                } else {
-                    Log.w("TemiInterface", "⚠️ 인식 결과 없음")
-                    callJavaScript("window.onSpeechError", "\"no_match\"")
-                }
-            }
-
-            override fun onPartialResults(partialResults: Bundle?) {}
-
-            override fun onEvent(eventType: Int, params: Bundle?) {}
-        })
     }
 
     private fun callJavaScript(functionName: String, param: String) {
@@ -184,18 +148,28 @@ class TemiInterface(
                 "$functionName && $functionName($param)"
             }
 
+            Log.d(TAG, "📞 JavaScript 호출: $script")
+
             val mainActivity = activity as? MainActivity
             mainActivity?.webView?.evaluateJavascript(script) { result ->
-                Log.d("TemiInterface", "JS 실행 결과: $result")
+                Log.d(TAG, "📞 JavaScript 실행 결과: $result")
             }
         }
     }
 
     fun destroy() {
-        speechRecognizer?.destroy()
-        speechRecognizer = null
+        Log.d(TAG, "🗑️ destroy() 호출")
+        robot.removeAsrListener(asrListener)
         isListening = false
-        Log.d("TemiInterface", "🗑️ SpeechRecognizer 정리됨")
+    }
+
+    // ========== 음성 ==========
+
+    @JavascriptInterface
+    fun speak(text: String) {
+        Log.d(TAG, "🔊 speak() 호출: $text")
+        val ttsRequest = TtsRequest.create(text, false)
+        robot.speak(ttsRequest)
     }
 
     // ========== Asset 오디오 경로 ==========
@@ -216,7 +190,7 @@ class TemiInterface(
 
             "data:image/png;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
         } catch (e: Exception) {
-            Log.e("TemiInterface", "이미지 로드 실패: $filename", e)
+            Log.e(TAG, "이미지 로드 실패: $filename", e)
             ""
         }
     }
@@ -232,7 +206,7 @@ class TemiInterface(
 
             "data:image/jpeg;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
         } catch (e: Exception) {
-            Log.e("TemiInterface", "부스 이미지 로드 실패: $filename", e)
+            Log.e(TAG, "부스 이미지 로드 실패: $filename", e)
             ""
         }
     }
@@ -248,17 +222,17 @@ class TemiInterface(
 
             "data:image/png;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
         } catch (e: Exception) {
-            Log.e("TemiInterface", "테마 이미지 로드 실패: $filename", e)
+            Log.e(TAG, "테마 이미지 로드 실패: $filename", e)
             ""
         }
     }
 
-    // ========== ImgBB 업로드 프록시 (SSL 인증서 우회) ==========
+    // ========== ImgBB 업로드 프록시 ==========
 
     @JavascriptInterface
     fun uploadImageToImgBB(base64Image: String): String {
         return try {
-            Log.d("TemiInterface", "ImgBB 업로드 시작...")
+            Log.d(TAG, "ImgBB 업로드 시작...")
 
             val apiKey = "e947920cd2d87b83c74bfdb195b2a18f"
 
@@ -289,7 +263,7 @@ class TemiInterface(
                 base64Image
             }
 
-            Log.d("TemiInterface", "이미지 데이터 길이: ${cleanBase64.length}")
+            Log.d(TAG, "이미지 데이터 길이: ${cleanBase64.length}")
 
             val postData = "key=$apiKey&image=${URLEncoder.encode(cleanBase64, "UTF-8")}"
 
@@ -299,26 +273,26 @@ class TemiInterface(
             writer.close()
 
             val responseCode = connection.responseCode
-            Log.d("TemiInterface", "응답 코드: $responseCode")
+            Log.d(TAG, "응답 코드: $responseCode")
 
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 val reader = BufferedReader(InputStreamReader(connection.inputStream))
                 val response = reader.readText()
                 reader.close()
-                Log.d("TemiInterface", "✅ 업로드 성공")
+                Log.d(TAG, "✅ 업로드 성공")
                 response
             } else {
                 val errorReader = BufferedReader(InputStreamReader(connection.errorStream))
                 val errorResponse = errorReader.readText()
                 errorReader.close()
-                Log.e("TemiInterface", "❌ 업로드 실패: $errorResponse")
+                Log.e(TAG, "❌ 업로드 실패: $errorResponse")
                 JSONObject().apply {
                     put("success", false)
                     put("error", "HTTP $responseCode: $errorResponse")
                 }.toString()
             }
         } catch (e: Exception) {
-            Log.e("TemiInterface", "❌ 업로드 예외", e)
+            Log.e(TAG, "❌ 업로드 예외", e)
             JSONObject().apply {
                 put("success", false)
                 put("error", "${e.javaClass.simpleName}: ${e.message}")
@@ -486,6 +460,7 @@ class TemiInterface(
 
     @JavascriptInterface
     fun showToast(message: String) {
+        Log.d(TAG, "🍞 Toast: $message")
         activity.runOnUiThread {
             Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
         }
