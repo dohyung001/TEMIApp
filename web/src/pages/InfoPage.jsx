@@ -26,7 +26,7 @@ export default function MapAndSchedulePage() {
                 {/* 1. 사이드바 네비게이션 */}
                 <div className="flex-shrink-0 pt-10 pb-10">
 
-                    <nav className="flex flex-col gap-9">
+                    <nav className="flex flex-col gap-6">
                         <button
                             onClick={() => setActiveView('map')}
                             className={`${commonButtonStyle} ${activeView === 'map' ? activeButtonStyle : inactiveButtonStyle}`}
@@ -46,16 +46,16 @@ export default function MapAndSchedulePage() {
                 </div>
 
                 {/* 2. 메인 컨텐츠 영역 */}
-                <main 
-                    className= "flex-grow shadow-1xl overflow-hidden  min-w-0 ml-20 my-100 mr-100 p-5" 
-                >
+                <main
+                    className="flex-grow flex flex-col overflow-hidden min-w-0 p-4 mr-32 ml-12 mt-10"                
+                    >
                     {/* 2-1. 지도 탭 */}
                     {activeView === 'map' && (
-                        <div className="w-full h-full overflow-auto rounded-xl">
+                        <div className="w-full h-600 overflow-auto rounded-xl">
                             <img
                                 src={mapImage}
                                 alt="행사 지도"
-                                className="w-full h-auto min-w-[1000px]"
+                                className="w-full h-full min-w-[800px] rounded-xl"
                             />
                         </div>
                     )}
@@ -63,7 +63,7 @@ export default function MapAndSchedulePage() {
                     {/* 2-2. 경진대회 정보 탭 */}
                     {activeView === 'schedule' && (
                         <div className="w-full h-full flex flex-col">
-                            
+
                             {/* 헤더 */}
                             <div className="grid grid-cols-[1.5fr_2.5fr_6fr] gap-4 text-3xl font-bold text-gray-800 border-b-2 border-gray-300 py-5 mb-10 shrink-0">
                                 <div className="text-center">운영</div>
@@ -73,7 +73,7 @@ export default function MapAndSchedulePage() {
 
                             {/* 리스트 (스크롤 영역) */}
                             <div className="flex-1 overflow-y-auto pr-3 custom-scrollbar">
-                                <div className="space-y-4"> 
+                                <div className="space-y-4">
                                     {infoData.map((item) => (
                                         <div
                                             key={item.id}
@@ -83,7 +83,7 @@ export default function MapAndSchedulePage() {
                                             <div className="text-center bg-gray-50 py-5 rounded-2xl shadow-sm truncate px-2 h-full flex items-center justify-center">
                                                 {item.host}
                                             </div>
-                                            
+
                                             {/* 컨소시엄명 */}
                                             <div className="text-center bg-gray-50 py-5 rounded-2xl shadow-sm truncate px-2 h-full flex items-center justify-center">
                                                 {item.field}
