@@ -189,7 +189,7 @@ export default function NavigationStep2() {
                 <div
                   key={booth.id}
                   onClick={() => setSelectedBooth(booth)}
-                  className={`min-h-[120px] text-3xl font-bold justify-center items-center flex p-6 px-12 rounded-2xl cursor-pointer transition-opacity ${getBoothColorClass(
+                  className={`min-h-[120px] text-3xl font-bold justify-center text-center items-center flex p-6 px-12 rounded-2xl cursor-pointer transition-opacity ${getBoothColorClass(
                     selected
                   )}`}
                 >
