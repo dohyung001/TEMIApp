@@ -47,7 +47,7 @@ export default function MapAndSchedulePage() {
 
                 {/* 2. 메인 컨텐츠 영역 */}
                 <main
-                    className="flex-grow flex flex-col overflow-hidden min-w-0 p-4 mr-32 ml-12 mt-10"                
+                    className="flex-grow flex flex-col overflow-hidden min-w-0 p-4 mr-32 ml-12 mt-10 mb-20"                
                     >
                     {/* 2-1. 지도 탭 */}
                     {activeView === 'map' && (
@@ -72,8 +72,8 @@ export default function MapAndSchedulePage() {
                             </div>
 
                             {/* 리스트 (스크롤 영역) */}
-                            <div className="flex-1 overflow-y-auto pr-3 custom-scrollbar">
-                                <div className="space-y-4">
+                            <div className="flex-1 overflow-y-auto pr-3 pb-10 custom-scrollbar">
+                                <div className="space-y-4"> 
                                     {infoData.map((item) => (
                                         <div
                                             key={item.id}
