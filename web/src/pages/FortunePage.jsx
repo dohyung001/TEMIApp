@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { ArrowUturnLeftIcon, XMarkIcon } from "@heroicons/react/24/solid";
+import { XMarkIcon } from "@heroicons/react/24/solid";
+import CardGroupIcon from "../assets/icons/card_group.svg?react";
+import { motion, AnimatePresence } from "framer-motion";
 
-// 카드 데이터 (유저가 제공한 24개 데이터)
+// 카드 데이터
 const CARD_DATA = [
   { id: 1, emoji: "🍀", title: "자신의 직감을 믿고<br/>결정을 내리세요." },
   {
@@ -29,7 +31,6 @@ const CARD_DATA = [
     emoji: "🌼",
     title: "주변사람에게<br/>좋은 영향을 받는<br/>날이에요",
   },
-
   { id: 11, emoji: "👉", title: "할까말까 고민될 땐<br/>무조건 하세요" },
   { id: 12, emoji: "🧗‍♀️", title: "오늘만큼은<br/>눈 딱 감고<br/>도전하세요" },
   {
@@ -52,7 +53,6 @@ const CARD_DATA = [
     title: "가까운 사람에게<br/>조그마한 선물을 주는게<br/>어떨까요?",
   },
   { id: 20, emoji: "🤞", title: "너무 조급해하지 마세요<br/>잘하고 있습니다" },
-
   { id: 21, emoji: "☀️", title: "오늘이 따뜻한 기억으로<br/>남을거예요" },
   { id: 22, emoji: "📸", title: "오늘은 사진을<br/>많이 남겨보세요" },
   { id: 23, emoji: "🎁", title: "오늘은 나를 위한<br/>선물을 주세요" },
@@ -71,12 +71,12 @@ const CardBack = ({ className = "", onClick, style, ...props }) => {
     <div
       onClick={onClick}
       className={`
-        rounded-2xl shadow-xl 
+        rounded-2xl shadow- 
         border-[10px] border-solid border-[#fffce7]
         flex flex-col items-center justify-center 
         p-2 transition-all duration-300 ease-in-out transform-gpu 
         aspect-[2/3] 
-        ${onClick ? "cursor-pointer hover:scale-[1.03] hover:shadow-2xl" : ""}
+        cursor-pointer
         ${className}
       `}
       style={{
@@ -98,75 +98,48 @@ const CardBack = ({ className = "", onClick, style, ...props }) => {
 export default function FortuneGame() {
   const [screen, setScreen] = useState("intro");
   const [selectedCard, setSelectedCard] = useState(null);
-  const [isAnimating, setIsAnimating] = useState(false);
 
   const mainBackgroundClass =
-    "min-h-screen p-10 flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 font-sans";
+    "pt-16 flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 font-sans";
 
   const handleStart = () => setScreen("selection");
 
-  // 인트로로 완전히 돌아갈 때 (선택 화면 좌하단 '뒤로 가기')
-  const handleGoBackToIntro = () => {
-    setIsAnimating(false);
-    setSelectedCard(null);
-    setTimeout(() => setScreen("intro"), 300);
-  };
-
-  // 결과 모달만 닫고, 선택 화면은 유지
   const handleCloseResult = () => {
-    setIsAnimating(false);
     setSelectedCard(null);
   };
 
   const handleSelectCard = (card) => {
-    setIsAnimating(true);
     setSelectedCard(card);
-    setTimeout(() => setIsAnimating(false), 500);
   };
-
-  const CARD_WIDTH = 250;
-  const CARD_HEIGHT = 350;
-  const CARD_OVERLAP_PERCENT = 0.6;
-  const CARD_COUNT = 8;
 
   return (
     <div className={mainBackgroundClass}>
       {/* --- 1. 인트로 화면 --- */}
-      {screen === "intro" && !selectedCard && (
-        <div className="text-center w-full max-w-4xl pt-20 animate-fade-in">
-          <h1 className="text-7xl font-extrabold text-slate-800 mb-20 leading-tight">
+      {screen === "intro" && (
+        <div className="text-center w-full max-w-4xl flex flex-col items-center animate-fade-in">
+          <h1 className="text-7xl font-extrabold text-slate-800 mb-32 leading-tight">
             <span className="text-slate-800">오늘의 </span>
             <span className="text-blue-600">운세</span>
             <span className="text-slate-800">가 궁금하세요?</span>
           </h1>
 
-          {/* 카드 덱 시뮬레이션 */}
           <div
             onClick={handleStart}
+            className="cursor-pointer"
             style={{
-              width: `${
-                CARD_WIDTH +
-                (CARD_COUNT - 1) * CARD_WIDTH * CARD_OVERLAP_PERCENT
-              }px`,
-              height: `${CARD_HEIGHT}px`,
+              animation: "scale 1.5s ease-in-out infinite",
+              transformOrigin: "center",
             }}
-            className="relative mx-auto my-16 cursor-pointer transform hover:scale-[1.02] transition-transform duration-500"
           >
-            {[...Array(CARD_COUNT)].map((_, index) => (
-              <CardBack
-                key={index}
-                className={`absolute shadow-2xl animate-card-pulse delay-[${
-                  index * 0.1
-                }s]`}
-                style={{
-                  width: `${CARD_WIDTH}px`,
-                  height: `${CARD_HEIGHT}px`,
-                  left: `${index * CARD_WIDTH * (1 - CARD_OVERLAP_PERCENT)}px`,
-                  zIndex: index + 1,
-                }}
-              />
-            ))}
+            <CardGroupIcon />
           </div>
+
+          <style>{`
+            @keyframes scale {
+              0%, 100% { transform: scale(1); }
+              50% { transform: scale(1.05); }
+            }
+          `}</style>
 
           <p className="text-3xl text-slate-500 mt-20">
             카드를 터치하면 시작해요
@@ -175,13 +148,12 @@ export default function FortuneGame() {
       )}
 
       {/* --- 2. 카드 선택 화면 --- */}
-      {/* ✅ selectedCard와 상관없이 selection 화면은 계속 유지 */}
       {screen === "selection" && (
-        <div className="text-center animate-fade-in w-full max-w-7xl pt-10">
+        <div className="text-center animate-fade-in w-full max-w-7xl">
           <h1 className="text-6xl font-extrabold text-slate-800 mb-4">
             오늘의 운세
           </h1>
-          <p className="text-3xl text-blue-400 font-semibold mb-12">
+          <p className="text-3xl font-semibold mb-12 text-slate-800">
             ✨ 카드를 하나 선택해주세요 ✨
           </p>
 
@@ -197,104 +169,89 @@ export default function FortuneGame() {
         </div>
       )}
 
-      {/* 뒤로 가기 버튼 (좌하단) - 선택 화면 + 결과 모달 없을 때만 */}
-      {screen === "selection" && !selectedCard && (
-        <button
-          onClick={handleGoBackToIntro}
-          className="absolute bottom-10 left-10 z-30 w-24 h-24 bg-white rounded-2xl shadow-xl flex items-center justify-center text-blue-600 transition-transform hover:scale-105"
-          aria-label="뒤로 가기"
-        >
-          <ArrowUturnLeftIcon className="w-12 h-12" />
-        </button>
-      )}
-
-      {/* --- 3. 결과 모달 --- */}
-      {selectedCard && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div
-            className={`
-              bg-white rounded-3xl shadow-2xl p-12 text-center relative max-w-lg w-full 
-              aspect-[2/3] 
-              ${isAnimating ? "animate-card-open" : "animate-fade-in-fast"}
-              flex flex-col items-center justify-center
-            `}
-          >
-            <button
-              onClick={handleCloseResult}
-              className="absolute top-6 right-6 text-gray-400 hover:text-gray-700 transition-colors"
-              aria-label="모달 닫기"
+      {/* --- 3. Flip 모달 --- */}
+      <AnimatePresence>
+        {selectedCard && (
+          <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <motion.div
+              style={{
+                perspective: "1000px",
+                width: "28rem",
+                aspectRatio: "2/3",
+              }}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.3 }}
             >
-              <XMarkIcon className="w-10 h-10" />
-            </button>
+              <motion.div
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  height: "100%",
+                  transformStyle: "preserve-3d",
+                }}
+                initial={{ rotateY: 0 }}
+                animate={{ rotateY: 180 }}
+                transition={{ duration: 0.7, ease: "easeInOut" }}
+              >
+                {/* 카드 뒷면 (🍀) */}
+                <motion.div
+                  style={{
+                    position: "absolute",
+                    width: "100%",
+                    height: "100%",
+                    backfaceVisibility: "hidden",
+                    WebkitBackfaceVisibility: "hidden",
+                  }}
+                  className="rounded-3xl shadow-2xl border-[10px] border-solid border-[#fffce7] flex items-center justify-center"
+                >
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      background:
+                        "linear-gradient(168deg, rgb(65, 150, 215) 0%, #e2f0ff 100%)",
+                      boxShadow: "0px 0px 10px rgba(63, 63, 63, 0.345)",
+                    }}
+                    className="rounded-2xl flex items-center justify-center"
+                  >
+                    <span className="text-9xl text-emerald-300 opacity-90 filter drop-shadow-[0_0_8px_rgba(0,128,0,0.7)]">
+                      🍀
+                    </span>
+                  </div>
+                </motion.div>
 
-            <div className="text-[120px] mb-8 animate-pop-in">
-              {selectedCard.emoji}
-            </div>
+                {/* 카드 앞면 (운세 결과) */}
+                <motion.div
+                  style={{
+                    position: "absolute",
+                    width: "100%",
+                    height: "100%",
+                    backfaceVisibility: "hidden",
+                    WebkitBackfaceVisibility: "hidden",
+                    rotateY: 180,
+                  }}
+                  className="bg-white rounded-3xl shadow-2xl p-12 flex flex-col items-center justify-center relative"
+                >
+                  <button
+                    onClick={handleCloseResult}
+                    className="absolute top-6 right-6 text-gray-400 transition-colors"
+                  >
+                    <XMarkIcon className="w-10 h-10" />
+                  </button>
 
-            <p
-              className="text-4xl font-extrabold text-gray-800 leading-snug tracking-tight px-4 animate-pop-in delay-200"
-              dangerouslySetInnerHTML={{ __html: selectedCard.title }}
-            />
+                  <div className="text-[120px] mb-8">{selectedCard.emoji}</div>
+
+                  <p
+                    className="text-4xl font-extrabold text-gray-800 leading-snug tracking-tight px-4"
+                    dangerouslySetInnerHTML={{ __html: selectedCard.title }}
+                  />
+                </motion.div>
+              </motion.div>
+            </motion.div>
           </div>
-        </div>
-      )}
-
-      {/* 커스텀 Tailwind 애니메이션 정의 (CSS) */}
-      <style jsx="true">{`
-        @keyframes card-open {
-          0% {
-            transform: scale(0.5) rotateY(0deg);
-            opacity: 0.5;
-          }
-          50% {
-            transform: scale(0.5) rotateY(90deg);
-            opacity: 0.8;
-          }
-          100% {
-            transform: scale(1) rotateY(0deg);
-            opacity: 1;
-          }
-        }
-
-        .animate-card-open {
-          animation: card-open 0.5s ease-out forwards;
-        }
-
-        @keyframes pop-in {
-          0% {
-            opacity: 0;
-            transform: scale(0.9);
-          }
-          100% {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        .animate-pop-in {
-          animation: pop-in 0.3s ease-out forwards;
-        }
-
-        @keyframes card-pulse {
-          0% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.02);
-          }
-          100% {
-            transform: scale(1);
-          }
-        }
-
-        .animate-card-pulse {
-          animation: card-pulse 2.5s ease-in-out infinite;
-        }
-
-        .delay-\[0s\] {
-          animation-delay: 0s;
-        }
-      `}</style>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

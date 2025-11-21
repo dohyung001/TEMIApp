@@ -8,10 +8,7 @@ export default function BoothModal({ booth, boothImage, onClose, category }) {
 
   useEffect(() => {
     if (booth) {
-      // Temi에 저장된 위치 목록 가져오기
       const locations = TemiBridge.getLocations();
-
-      // booth.location이 Temi 위치 목록에 있는지 확인
       const locationExists = locations.includes(booth.location);
       setCanNavigate(locationExists);
     }
@@ -23,12 +20,10 @@ export default function BoothModal({ booth, boothImage, onClose, category }) {
 
   const handleNavigate = () => {
     if (canNavigate && booth.location) {
-      // Temi에 저장된 위치로 이동
       TemiBridge.goTo(booth.location);
       TemiBridge.speak(`${booth.name}로 안내를 시작합니다`);
-      onClose(); // 모달 닫기
+      onClose();
     } else {
-      // 위치가 없을 경우
       TemiBridge.showToast("저장된 위치를 찾을 수 없습니다");
       TemiBridge.speak("죄송합니다. 해당 위치가 등록되어 있지 않습니다");
     }
@@ -40,10 +35,9 @@ export default function BoothModal({ booth, boothImage, onClose, category }) {
       onClick={onClose}
     >
       <div
-        className={`${colorClass} rounded-3xl p-8 w-[80%] h-[80%] relative py-20`}
+        className={`${colorClass} rounded-3xl p-8 w-[80%] h-[1000px] relative flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 인라인 스타일 */}
         <style>{`
           .ios-scroll::-webkit-scrollbar {
             width: 6px;
@@ -66,30 +60,29 @@ export default function BoothModal({ booth, boothImage, onClose, category }) {
         {/* 닫기 버튼 */}
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 text-5xl font-bold text-slate-600 hover:text-slate-800 z-10"
+          className="absolute top-6 right-6 text-5xl font-bold text-slate-600 z-10"
         >
           ✕
         </button>
 
         {/* 스크롤 가능한 컨텐츠 영역 */}
         <div
-          className="overflow-y-auto pr-2 ios-scroll"
+          className="overflow-y-auto pr-2 ios-scroll flex-1"
           style={{
-            maxHeight: "calc(85vh - 160px)",
             scrollbarWidth: "thin",
             scrollbarColor: "rgba(0, 0, 0, 0.2) transparent",
           }}
         >
           {/* 부스 이미지 */}
-          <div className={`rounded-2xl p-4 mb-6 bg-${colorClass}`}>
+          <div className="rounded-2xl p-4 mb-6 bg-white bg-opacity-30">
             {boothImage ? (
               <img
                 src={boothImage}
                 alt={booth.name}
-                className="w-[80%] h-auto max-h-[700px] object-contain rounded-xl mx-auto"
+                className="w-[90%] h-auto max-h-[700px] object-contain rounded-xl mx-auto"
               />
             ) : (
-              <div className="w-[90%] h-[500px] bg-gray-200 rounded-xl flex items-center justify-center text-gray-400 text-3xl">
+              <div className="w-[90%] h-[400px] bg-gray-200 rounded-xl flex items-center justify-center text-gray-400 text-3xl mx-auto">
                 이미지 준비중
               </div>
             )}
@@ -165,14 +158,13 @@ export default function BoothModal({ booth, boothImage, onClose, category }) {
                 {booth.location || "전시장 내"}
               </p>
             </div>
+
             {/* 길안내 버튼 */}
             <button
               onClick={handleNavigate}
               disabled={!canNavigate}
-              className={`w-full text-white text-4xl font-bold py-5 rounded-full flex items-center justify-center gap-3 transition-colors mt-6 ${
-                canNavigate
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "bg-gray-400 cursor-not-allowed"
+              className={`w-full text-white text-4xl font-bold py-5 rounded-full flex items-center justify-center gap-3 transition-colors mb-6 ${
+                canNavigate ? "bg-blue-600" : "bg-gray-400 cursor-not-allowed"
               }`}
             >
               <SmallNavigateIcon className="w-10 h-10" />
