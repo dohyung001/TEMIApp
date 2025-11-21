@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import AngleButton from "../components/AngleButton"
 import RightArrowIcon from "../assets/icons/right_arrow.svg?react";
+import VsIcon from "../assets/icons/vs.svg?react";
+import QuestionIcon from "../assets/icons/question.svg?react"; 
+import VsIcon2 from "../assets/icons/vs2.svg?react";
+import LineIcon from "../assets/icons/line.svg?react";
 
 // --- 1. 아이콘 컴포넌트 (사이즈 대폭 확대 32~40px) ---
 const Icons = {
@@ -189,8 +193,8 @@ const BoothCard = ({ booth }) => {
 
   return (
     // ★★★ 수정된 부분: w-[440px] 추가 ★★★
-    <div className={`w-[440px] ${cardBgColor} rounded-3xl shadow-xl overflow-hidden  flex flex-col transform  transition-transform duration-300`}>
-      <div className="m-6 mb-0 rounded-2xl overflow-hidden  relative h-60 flex-shrink-0">
+    <div className={`w-[440px] ${cardBgColor} rounded-3xl shadow-xl overflow-hidden  flex flex-col transform  transition-transform duration-300`}>
+      <div className="m-6 mb-0 rounded-2xl overflow-hidden  relative h-60 flex-shrink-0">
         {booth.image ? (
           <img src={booth.image} alt={booth.title} className="w-full h-full object-cover" />
         ) : (
@@ -243,27 +247,35 @@ const BoothRecommender = () => {
     }
   };
 
-  // 1. 시작 화면 (폰트 Very Large)
+  // 1. 시작 화면 (폰트 크기 확대 + Line 아이콘 적용)
   const renderStartScreen = () => (
     <div className="text-center flex flex-col items-center animate-fade-in w-full max-w-6xl">
       <div className="flex items-center justify-center mb-12 gap-10">
-        <span className="text-8xl font-bold text-gray-400 opacity-60">?</span>
-        {/* VS: 6xl -> 8xl */}
-        <span className="text-[#3b82f6] font-black text-8xl italic">vs</span>
-        <span className="text-8xl font-bold text-gray-400 opacity-60">?</span>
+        {/* 물음표 아이콘 */}
+        <QuestionIcon className="w-24 h-24 text-gray-400 opacity-60" />
+        
+        {/* VS 아이콘 */}
+        <VsIcon/>
+        
+        {/* 물음표 아이콘 */}
+        <QuestionIcon className="w-24 h-24 text-gray-400 opacity-60" />
       </div>
       
-      {/* 제목: 5xl -> 7xl */}
-      <h1 className="text-7xl font-extrabold text-[#1e293b] mb-6 tracking-tight">부스 추천 받기</h1>
-      {/* 설명: xl -> 3xl */}
-      <p className="text-3xl text-gray-500 mb-20 font-medium leading-relaxed">
-        본인 취향에 맞는 부스를 <br className="md:hidden"/>
+      {/* 제목 */}
+      <h1 className="text-7xl font-extrabold text-[#1e293b] mb-10 tracking-tight">부스 추천 받기</h1>
+      
+      {/* ★★★ 수정된 부분 1: 폰트 크기 확대 (text-4xl) & 강제 줄바꿈(br) ★★★ */}
+      <p className="text-4xl text-gray-500 mb-16 font-medium leading-normal">
+        본인 취향에 맞는 부스를 <br />
         <span className="text-[#3b82f6] font-bold">양자택일</span> 게임을 통해 추천해드려요
       </p>
       
-      <div className="w-16 h-2 bg-blue-100 rounded-full mb-20"></div>
+      {/* ★★★ 수정된 부분 2: 기존 막대 div 삭제 후 LineIcon.svg 적용 ★★★ */}
+      <div className="mb-20">
+        <LineIcon />
+      </div>
 
-      {/* 시작 버튼: xl -> 3xl */}
+      {/* 시작 버튼 */}
       <AngleButton
         onClick={handleStart}
         icon={<RightArrowIcon />}
@@ -272,42 +284,39 @@ const BoothRecommender = () => {
       </AngleButton>
     </div>
   );
-
-  // 2. 질문 화면 (폰트 Very Large + 위로 정렬)
+// 2. 질문 화면 (폰트 Very Large + 위로 정렬)
   const renderQuestionScreen = () => {
     const currentQuestion = questions[step - 1];
     const [optionA, optionB] = currentQuestion.options;
 
     return (
-      <div className="w-full max-w-[1400px] text-center flex flex-col items-center relative">
+      <div className="w-full max-w-[1600px] text-center flex flex-col items-center relative">
         {/* 질문: 4xl/5xl -> 7xl */}
         <h2 className="text-6xl md:text-7xl font-extrabold text-[#1e293b] mb-4 tracking-tight">{currentQuestion.question}</h2>
         {/* 서브타이틀: xl -> 3xl */}
         <p className="text-3xl text-gray-400 font-medium mb-20">{currentQuestion.subtitle}</p>
 
-        <div className="flex flex-col md:flex-row items-center justify-center gap-12 md:gap-20 w-full mb-24 relative">
-          {/* 선택지 A - 카드 크기 확대 */}
+        <div className="flex flex-col md:flex-row items-center justify-center gap-16 md:gap-40 w-full mb-24 relative">
+          
+          {/* 선택지 A - 가로폭 수정 (500px -> 600px) */}
           <button
             onClick={() => handleAnswer(optionA.key)}
-            className={`${optionA.color} w-full md:w-[500px] h-[400px] rounded-[3rem] shadow-sm flex flex-col items-center justify-center p-10 hover:shadow-2xl hover:scale-105 transition-all duration-300 group`}
+            className={`${optionA.color} w-full md:w-[600px] h-[400px] rounded-[3rem] shadow-sm flex flex-col items-center justify-center p-10 hover:shadow-2xl hover:scale-105 transition-all duration-300 group`}
           >
-            {/* 선택지 텍스트: 5xl -> 7xl */}
             <span className="text-7xl font-extrabold text-[#1e293b] group-hover:text-blue-900 transition-colors break-keep leading-tight">{optionA.text}</span>
-            {/* 상세 텍스트: 2xl -> 3xl */}
             {optionA.detail && <span className="text-3xl text-gray-500 mt-6 font-medium">{optionA.detail}</span>}
           </button>
 
-          {/* VS Badge (중앙) */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-             <div className="bg-[#7c92e6] w-28 h-20 rounded-[30px] flex items-center justify-center border-[6px] border-[#f8f9fe] shadow-lg">
-               <span className="text-white font-black text-4xl italic pr-1 pt-1">VS</span>
-             </div>
+          {/* VS 아이콘 (VsIcon2 사용) - 크기 축소 수정 */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
+             {/* 기존 w-32 h-32 / md:w-40 md:h-40 에서 -> w-20 h-20 / md:w-28 md:h-28 로 축소 */}
+             <VsIcon2 className="w-20 h-20 md:w-28 md:h-28 drop-shadow-xl" />
           </div>
 
-          {/* 선택지 B */}
+          {/* 선택지 B - 가로폭 수정 (500px -> 600px) */}
           <button
             onClick={() => handleAnswer(optionB.key)}
-            className={`${optionB.color} w-full md:w-[500px] h-[400px] rounded-[3rem] shadow-sm flex flex-col items-center justify-center p-10 hover:shadow-2xl hover:scale-105 transition-all duration-300 group`}
+            className={`${optionB.color} w-full md:w-[600px] h-[400px] rounded-[3rem] shadow-sm flex flex-col items-center justify-center p-10 hover:shadow-2xl hover:scale-105 transition-all duration-300 group`}
           >
             <span className="text-7xl font-extrabold text-[#1e293b] group-hover:text-blue-900 transition-colors break-keep leading-tight">{optionB.text}</span>
             {optionB.detail && <span className="text-3xl text-gray-500 mt-6 font-medium">{optionB.detail}</span>}
@@ -376,10 +385,6 @@ const BoothRecommender = () => {
             <BoothCard key={booth.id} booth={booth} />
           ))}
         </div>
-        
-        <button onClick={handleReset} className="mt-20 bg-gray-500 text-white px-12 py-6 rounded-2xl font-bold text-2xl hover:bg-gray-600 transition">
-            처음으로 돌아가기
-        </button>
       </div>
     );
   };
