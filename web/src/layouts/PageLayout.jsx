@@ -15,32 +15,34 @@ export default function PageLayout() {
   return (
     <div className="w-[1920px] h-[1200px] flex flex-col bg-gradient-to-br from-gray-100 to-gray-200 relative">
       {/* 상단 컨트롤 영역 */}
-      <div className="h-[140px] flex items-center justify-between px-10 flex-shrink-0">
+      <div className="h-[160px] flex items-center justify-between px-10 flex-shrink-0">
         {/* 홈 버튼 */}
         <div className="w-[120px]">{!isHome && <HomeButton />}</div>
 
         <div className="flex gap-4">
           {/* 중앙: 안내 메시지 */}
-          <div className="flex-1 flex items-center justify-center px-8">
-            <div className="relative bg-[#829AC1] backdrop-blur rounded-3xl px-8 py-4">
-              <p className="text-4xl text-white">
-                버튼을 누르면 저와 대화할 수 있어요
-              </p>
+          {isHome && (
+            <div className="flex-1 flex items-center justify-center px-8">
+              <div className="relative bg-[#829AC1] backdrop-blur rounded-3xl px-8 py-4">
+                <p className="text-4xl text-white">
+                  버튼을 누르면 저와 대화할 수 있어요
+                </p>
 
-              {/* TailIcon 꼬리 */}
-              <TailIcon
-                className="
-        absolute 
-        -right-12 
-        top-1/2 
-        -translate-y-4
-         
-        w-[80px] 
-        h-[40px]
-      "
-              />
+                {/* TailIcon 꼬리 */}
+                <TailIcon
+                  className="
+                  absolute 
+                  -right-12 
+                  top-1/2 
+                  -translate-y-4
+                   
+                  w-[80px] 
+                  h-[40px]
+                "
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 스피치 버튼 */}
           <div className="w-[120px] flex justify-end">

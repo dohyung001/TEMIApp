@@ -34,7 +34,7 @@ const mobilityBoothData = [
   },
   {
     id: "m-3",
-    name: "일반인 로봇 교육프로그램 1 (경주로봇 만들기)",
+    name: "경주로봇 만들기",
     img: "img/m/m-3.jpg",
     category: "미래 모빌리티 및 로봇",
     subCategory: "지능형로봇",
@@ -50,7 +50,7 @@ const mobilityBoothData = [
   },
   {
     id: "m-4",
-    name: "일반인 로봇 교육프로그램 2 (청소로봇 만들기)",
+    name: "청소로봇 만들기",
     img: "img/m/m-4.jpg",
     category: "미래 모빌리티 및 로봇",
     subCategory: "지능형로봇",
@@ -66,7 +66,7 @@ const mobilityBoothData = [
   },
   {
     id: "m-5",
-    name: "일반인 로봇 교육프로그램 3 (자이로 외발주행 로봇 만들기)",
+    name: "자이로 외발주행 로봇 만들기",
     img: "img/m/m-5.jpg",
     category: "미래 모빌리티 및 로봇",
     subCategory: "지능형로봇",
@@ -82,7 +82,7 @@ const mobilityBoothData = [
   },
   {
     id: "m-6",
-    name: "일반인 로봇 교육프로그램 4 (유선 스파이더로봇 만들기)",
+    name: "유선 스파이더로봇 만들기",
     img: "img/m/m-6.jpg",
     category: "미래 모빌리티 및 로봇",
     subCategory: "지능형로봇",
@@ -98,7 +98,7 @@ const mobilityBoothData = [
   },
   {
     id: "m-7",
-    name: "일반인 로봇 교육프로그램 5 (휴머노이드 이론교육 및 미션수행)",
+    name: "머노이드 이론교육 및 미션수행",
     img: "img/m/m-7.jpg",
     category: "미래 모빌리티 및 로봇",
     subCategory: "지능형로봇",

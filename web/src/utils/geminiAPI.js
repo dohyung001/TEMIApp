@@ -1,4 +1,6 @@
 // web/src/utils/geminiAPI.js
+import axios from "axios";
+
 const TEMI_SYSTEM_PROMPT = `당신은 테미(Temi)라는 친근한 안내 로봇입니다.
 
 # 행사 정보:
@@ -67,6 +69,14 @@ const TEMI_SYSTEM_PROMPT = `당신은 테미(Temi)라는 친근한 안내 로봇
 - 모르는 건 솔직히 "잘 모르겠어요"라고 답변
 - 기능 사용을 권유할 때는 "화면의 ○○○ 버튼을 눌러주세요" 형식으로 안내`;
 
+// Axios 인스턴스 생성
+const geminiAPI = axios.create({
+  baseURL: "https://generativelanguage.googleapis.com/v1beta",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
 /**
  * Gemini API를 호출하여 응답을 받는 함수
  * @param {string} userMessage - 사용자 메시지
@@ -74,40 +84,62 @@ const TEMI_SYSTEM_PROMPT = `당신은 테미(Temi)라는 친근한 안내 로봇
  */
 export async function callGeminiAPI(userMessage) {
   try {
-    const API_KEY = "AIzaSyCiGTJ3lA_R6K9N-eFmY_vASkg8mFR-7FE";
+    const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    if (!API_KEY) {
+      console.error("❌ Gemini API 키가 설정되지 않았습니다");
+      return "죄송해요, 설정 오류가 발생했어요!";
+    }
+
+    const response = await geminiAPI.post(
+      "/models/gemini-2.0-flash-exp:generateContent",
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": API_KEY,
+        systemInstruction: {
+          parts: [{ text: TEMI_SYSTEM_PROMPT }],
         },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: TEMI_SYSTEM_PROMPT }],
+        contents: [
+          {
+            parts: [{ text: userMessage }],
           },
-          contents: [
-            {
-              parts: [{ text: userMessage }],
-            },
-          ],
-        }),
+        ],
+      },
+      {
+        params: {
+          key: API_KEY,
+        },
       }
     );
 
-    const data = await response.json();
-
-    // API 오류 처리
-    if (data.error) {
-      console.error("Gemini API 오류:", data.error);
-      return "앗, 다시 말씀해주세요! 😅";
+    // 응답 검증
+    if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+      return response.data.candidates[0].content.parts[0].text;
     }
 
-    return data.candidates[0].content.parts[0].text;
+    console.error("❌ Gemini API 응답 형식 오류:", response.data);
+    return "죄송해요, 응답을 처리할 수 없어요!";
   } catch (error) {
-    console.error("Gemini API 오류:", error);
+    // Axios 에러 처리
+    if (error.response) {
+      // 서버 응답 오류 (4xx, 5xx)
+      console.error("❌ Gemini API 오류:", {
+        status: error.response.status,
+        data: error.response.data,
+      });
+
+      if (error.response.status === 403) {
+        return "죄송해요, API 키 문제가 있어요!";
+      } else if (error.response.status === 429) {
+        return "죄송해요, 요청이 너무 많아요. 잠시 후 다시 시도해주세요!";
+      }
+    } else if (error.request) {
+      // 요청은 보냈지만 응답 없음
+      console.error("❌ 네트워크 오류:", error.request);
+      return "죄송해요, 네트워크 오류가 발생했어요!";
+    } else {
+      // 요청 설정 중 오류
+      console.error("❌ 요청 설정 오류:", error.message);
+    }
+
     return "죄송해요, 오류가 발생했어요!";
   }
 }

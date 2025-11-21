@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 // import { HomeIcon } from '@heroicons/react/24/solid'; // 홈 아이콘 제거
 
 // ------------------------------------------------------------------
@@ -8,8 +8,8 @@ import mapImage from '/img/map.png';
 import infoData from '../constants/infoData.js';
 
 export default function MapAndSchedulePage() {
-    // 'schedule' (경진대회 정보) 뷰를 기본값으로 설정 (제공된 이미지 2번 기준)
-    const [activeView, setActiveView] = useState('schedule');
+  // 'schedule' (경진대회 정보) 뷰를 기본값으로 설정 (제공된 이미지 2번 기준)
+  const [activeView, setActiveView] = useState("schedule");
 
     // 사이드바 버튼의 공통/활성/비활성 스타일
     const commonButtonStyle = "flex text-4xl font-bold items-center justify-center rounded-r-3xl cursor-pointer transition-all duration-200";
@@ -103,7 +103,21 @@ export default function MapAndSchedulePage() {
                     )}
                 </main>
 
+          {/* 2-2. '경진대회 정보' 탭 선택 시 (테이블 이미지) */}
+          {activeView === "schedule" && (
+            // 컨텐츠 카드 내에서 이미지가 스크롤되도록 설정
+            <div className="w-full h-full overflow-auto">
+              <img
+                src={scheduleTableImage}
+                alt="경진대회 정보"
+                // 이미지가 찌그러지지 않고 원본 비율을 유지하며,
+                // 내용이 많으므로 가로 스크롤이 가능하도록 최소 너비를 줌
+                className="w-full h-auto min-w-[1000px]"
+              />
             </div>
-        </div>
-    );
+          )}
+        </main>
+      </div>
+    </div>
+  );
 }
