@@ -37,7 +37,7 @@ export default function HomePage() {
     {
       id: "recommend",
       icon: <StarIcon />,
-      title: "부스 추천 받기",
+      title: "부스<br />추천 받기",
       path: "/recommend",
     },
     {
@@ -46,7 +46,12 @@ export default function HomePage() {
       title: "사진촬영<br /> & 전송",
       path: "/photo",
     },
-    { id: "survey", icon: <SurveyIcon />, title: "설문조사", path: "/survey" },
+    {
+      id: "survey",
+      icon: <SurveyIcon />,
+      title: "의견<br />남기기",
+      path: "/survey",
+    },
   ];
 
   const handleMenuClick = (path, title) => {
@@ -112,6 +117,14 @@ export default function HomePage() {
         </div>
 
         {/* 하단 안내 - 높이 축소 */}
+        <div className="flex mt-4 items-center justify-end">
+          <div className="w-6 h-6 rounded-full bg-slate-400 text-gray-200 flex items-center justify-center text-sm font-bold mr-1">
+            i
+          </div>
+          <p className="flex text-end text-2xl text-slate-500 ">
+            본 서비스는 we-meet 수업의 프로젝트 결과물로 제작되었습니다.
+          </p>
+        </div>
       </div>
     </div>
   );

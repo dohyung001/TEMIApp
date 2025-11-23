@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 // ------------------------------------------------------------------
 // ★★★★★ 1. QR 코드 이미지 Import ★★★★★
@@ -6,17 +6,14 @@ import React from 'react';
 // (web/src/assets/img/ 폴더에 있는 QR 코드 이미지)
 // (파일 이름이 다르면 이 경로를 수정하세요)
 
-import qrDinoImage from '/img/qrcode_docs.google.com.png'; 
+import qrDinoImage from "/img/qrs/qrcode_docs.google.com.png";
 // ------------------------------------------------------------------
-
 
 // (메인 컴포넌트)
 export default function SurveyPage() {
-
   return (
     // 1. 전체 화면 컨테이너
     <div className="relative flex flex-col items-center justify-center pt-32 text-gray-800">
-      
       {/* 2. 홈 버튼 (제거됨) */}
 
       {/* 3. 텍스트 컨텐츠 (UI 스크린샷 반영) */}
@@ -27,16 +24,17 @@ export default function SurveyPage() {
       </div>
 
       {/* 4. QR 코드 섹션 */}
-      <div className="relative flex items-center pt-10 justify-center animate-fade-in" style={{ animationDelay: '0.2s' }}>
-        
+      <div
+        className="relative flex items-center pt-10 justify-center animate-fade-in"
+        style={{ animationDelay: "0.2s" }}
+      >
         <div className="relative">
           {/* Import한 다이노 QR 코드 이미지 사용 */}
-          <img 
-            src={qrDinoImage} 
-            alt="설문조사 QR 코드" 
+          <img
+            src={qrDinoImage}
+            alt="설문조사 QR 코드"
             className="w-80 h-80 rounded-lg shadow-xl" // 320x320px
           />
-          
         </div>
       </div>
     </div>

@@ -41,7 +41,6 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
       TemiBridge.startSpeechRecognition();
       console.log("✅ TemiBridge.startSpeechRecognition() 호출 성공");
 
-      // ✅ 10초 타임아웃 설정 (8초 → 10초로 늘림)
       if (listeningTimeoutRef.current) {
         clearTimeout(listeningTimeoutRef.current);
       }
@@ -55,11 +54,10 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
 
         TemiBridge.stopSpeechRecognition();
         TemiBridge.showToast("음성이 감지되지 않아 대화가 종료되었습니다");
-      }, 10000); // 10초로 늘림
+      }, 10000);
     } catch (error) {
       console.error("❌ [startListening] 실패:", error);
 
-      // ✅ 에러 무시 제거 - 모든 에러를 표시
       isRecognitionActiveRef.current = false;
       currentStepRef.current = "idle";
       setCurrentStep("idle");
@@ -68,7 +66,6 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
         clearTimeout(listeningTimeoutRef.current);
       }
 
-      // ✅ 사용자에게 에러 표시
       TemiBridge.showToast(`음성 인식 시작 실패: ${error.message || error}`);
     }
   }, []);
@@ -80,10 +77,9 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
     if (isOpen) {
       console.log("🟢 [Overlay] 오픈 - 초기화 및 듣기 시작");
 
-      setMessages([]);
+      setMessages([{ role: "user", text: "text" }]);
       setCurrentStep("idle");
 
-      // ✅ 500ms 딜레이 후 시작
       setTimeout(() => {
         startListening();
       }, 500);
@@ -97,7 +93,6 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
         clearTimeout(listeningTimeoutRef.current);
       }
 
-      // ✅ 음성 인식 중지
       try {
         TemiBridge.stopSpeechRecognition();
       } catch (e) {
@@ -159,7 +154,6 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
       currentStepRef.current = "thinking";
       setCurrentStep("thinking");
 
-      // ✅ Gemini API 호출
       try {
         const response = await callGeminiAPI(text);
         console.log("💡 [AI 응답]:", response);
@@ -193,7 +187,6 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
         currentStepRef.current = "idle";
         setCurrentStep("idle");
 
-        // 재시도
         setTimeout(() => {
           startListening();
         }, 2000);
@@ -212,7 +205,6 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
       currentStepRef.current = "idle";
       setCurrentStep("idle");
 
-      // ✅ 에러 메시지 매핑
       let errorMessage = "음성 인식 오류가 발생했어요";
 
       switch (error) {
@@ -243,7 +235,6 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
       console.log(`📢 [오류] ${errorMessage}`);
       TemiBridge.showToast(errorMessage);
 
-      // ✅ 치명적 오류(권한, 서비스 없음)가 아니면 재시도
       if (error !== "no_permission" && error !== "not_available") {
         console.log("🔄 2초 후 재시도");
         setTimeout(() => {
@@ -295,14 +286,15 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
           className="w-[1200px] h-[900px] bg-white rounded-3xl shadow-2xl flex flex-col pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* 헤더 */}
+          {/* 헤더 - text-4xl → text-5xl */}
           <div className="flex items-center justify-between px-8 py-6 border-b-2 border-gray-200 bg-gradient-to-r from-blue-500 to-blue-600 rounded-t-3xl">
-            <h1 className="text-4xl font-bold text-white">
+            <h1 className="text-5xl font-bold text-white">
               💬 테미랑 대화하기
             </h1>
+            {/* 닫기 버튼 - text-3xl → text-4xl */}
             <button
               onClick={onClose}
-              className="w-14 h-14 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-3xl font-bold transition-colors"
+              className="w-14 h-14 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-4xl font-bold transition-colors"
             >
               ✕
             </button>
@@ -314,12 +306,14 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
             className="flex-1 overflow-y-auto px-8 py-6 bg-gray-50"
           >
             <div className="space-y-4">
+              {/* 빈 상태 메시지 - text-2xl → text-3xl */}
               {messages.length === 0 && currentStep === "idle" && (
-                <div className="text-center text-slate-400 text-2xl py-20">
+                <div className="text-center text-slate-400 text-3xl py-20">
                   듣기를 시작합니다...
                 </div>
               )}
 
+              {/* 채팅 메시지 - text-2xl → text-3xl */}
               {messages.map((msg, idx) => (
                 <div
                   key={idx}
@@ -328,7 +322,7 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
                   }`}
                 >
                   <div
-                    className={`max-w-[70%] px-6 py-4 rounded-3xl shadow-md text-xl ${
+                    className={`max-w-[70%] px-6 py-4 rounded-3xl shadow-md text-3xl ${
                       msg.role === "user"
                         ? "bg-blue-500 text-white rounded-br-sm"
                         : "bg-white text-slate-800 rounded-bl-sm border border-gray-200"
@@ -342,7 +336,7 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
             </div>
           </div>
 
-          {/* 하단 상태 표시 + 재시작 버튼 */}
+          {/* 하단 상태 표시 + 재시작 버튼 - text-xl → text-2xl */}
           <div className="px-8 py-6 border-t-2 border-gray-200 bg-white rounded-b-3xl">
             <div className="flex items-center justify-between">
               {/* 상태 표시 */}
@@ -353,7 +347,7 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
                       <div className="w-4 h-4 bg-red-500 rounded-full"></div>
                       <div className="absolute inset-0 w-4 h-4 bg-red-500 rounded-full animate-ping"></div>
                     </div>
-                    <p className="text-xl font-semibold text-red-700">
+                    <p className="text-2xl font-semibold text-red-700">
                       듣고 있어요...
                     </p>
                   </div>
@@ -372,7 +366,7 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
                         style={{ animationDelay: "0.2s" }}
                       ></div>
                     </div>
-                    <p className="text-xl font-semibold text-blue-700">
+                    <p className="text-2xl font-semibold text-blue-700">
                       생각 중...
                     </p>
                   </div>
@@ -395,7 +389,7 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
                         style={{ animationDelay: "0.3s" }}
                       ></div>
                     </div>
-                    <p className="text-xl font-semibold text-green-700">
+                    <p className="text-2xl font-semibold text-green-700">
                       말하는 중...
                     </p>
                   </div>
@@ -403,16 +397,16 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
 
                 {currentStep === "idle" && (
                   <div className="flex items-center gap-4 bg-gray-100 px-6 py-3 rounded-full">
-                    <p className="text-xl text-slate-600">대기 중...</p>
+                    <p className="text-2xl text-slate-600">대기 중...</p>
                   </div>
                 )}
               </div>
 
-              {/* 재시작 버튼 (idle 상태일 때만) */}
+              {/* 재시작 버튼 - text-xl → text-2xl */}
               {currentStep === "idle" && (
                 <button
                   onClick={startListening}
-                  className="ml-4 px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full font-bold text-xl shadow-lg transition-all hover:scale-105 flex items-center gap-3"
+                  className="ml-4 px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full font-bold text-2xl shadow-lg transition-all hover:scale-105 flex items-center gap-3"
                 >
                   <svg
                     className="w-6 h-6"
