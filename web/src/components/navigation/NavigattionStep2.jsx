@@ -9,9 +9,22 @@ import SearchIcon from "../../assets/icons/search.svg?react";
 import useDebounce from "../../hooks/useDebounce";
 import BoothModal from "./BoothModal";
 import getBoothColorClass from "../../utils/getBoothColorClass";
+import InfoQr from "/img/qrs/info_qr.png";
+
+const InfoIcon = ({ className }) => (
+  <svg
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <circle cx="12" cy="12" r="10" strokeWidth="2" />
+    <path d="M12 16v-4M12 8h.01" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
 
 export default function NavigationStep2() {
-  const [selected, setSelected] = useState("energy");
+  const [selected, setSelected] = useState("mobility");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBooth, setSelectedBooth] = useState(null);
   const [boothImages, setBoothImages] = useState({});
@@ -20,19 +33,20 @@ export default function NavigationStep2() {
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const dataMap = {
+    mobility: mobilityBoothData,
     energy: energyBoothData,
     ict: ictBoothData,
     advanced: advancedBoothData,
-    mobility: mobilityBoothData,
+
     bioHealth: bioHealthBoothData,
   };
 
   // ✅ 카테고리별 설명 텍스트
   const categoryDescriptions = {
+    mobility: "지능형로봇, 지능형로봇, 미래자동차, 항공드론",
     energy: "에너지신사업, 이차전지, 에코업, 그린바이오",
     ict: "인공지능, 빅데이터, 데이터보안활용융합, 사물인터넷, 차세대통신, 실감미디어",
     advanced: "차세대반도체, 반도체소부장, 첨단소재나노융합, 차세대디스플레이",
-    mobility: "지능형로봇, 지능형로봇, 미래자동차, 항공드론",
     bioHealth: "바이오헬스",
   };
 
@@ -107,6 +121,17 @@ export default function NavigationStep2() {
           <nav
             className={`flex text-4xl font-bold items-center justify-center rounded-r-3xl cursor-pointer
                 ${
+                  selected === "mobility"
+                    ? "bg-[#1D4ED8] w-[552px] h-[120px] text-white"
+                    : "bg-white w-[492px] h-[110px]"
+                }`}
+            onClick={() => setSelected("mobility")}
+          >
+            🚀 미래 모빌리티 및 로봇
+          </nav>
+          <nav
+            className={`flex text-4xl font-bold items-center justify-center rounded-r-3xl cursor-pointer
+                ${
                   selected === "energy"
                     ? "bg-[#1D4ED8] w-[552px] h-[120px] text-white"
                     : "bg-white w-[492px] h-[110px]"
@@ -137,17 +162,7 @@ export default function NavigationStep2() {
           >
             🔬 첨단 제조 및 소재
           </nav>
-          <nav
-            className={`flex text-4xl font-bold items-center justify-center rounded-r-3xl cursor-pointer
-                ${
-                  selected === "mobility"
-                    ? "bg-[#1D4ED8] w-[552px] h-[120px] text-white"
-                    : "bg-white w-[492px] h-[110px]"
-                }`}
-            onClick={() => setSelected("mobility")}
-          >
-            🚀 미래 모빌리티 및 로봇
-          </nav>
+
           <nav
             className={`flex text-4xl font-bold items-center justify-center rounded-r-3xl cursor-pointer
                 ${
@@ -205,6 +220,31 @@ export default function NavigationStep2() {
         </div>
       </div>
 
+      <div className="absolute left-10 bottom-6 flex items-end gap-4">
+        {/* QR 이미지 */}
+        <img
+          src={InfoQr}
+          alt="지도 QR 코드"
+          className="w-44 h-44 rounded-xl shadow-lg bg-white p-2"
+        />
+
+        {/* 안내 문구 */}
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl px-6 py-4 shadow-lg mb-2 max-w-[400px]">
+          <div className="flex items-start gap-3">
+            <InfoIcon className="w-6 h-6 text-blue-500 flex-shrink-0 mt-1" />
+            <div>
+              <p className="text-xl font-semibold text-gray-800 mb-1">
+                휴대폰으로 확인하기
+              </p>
+              <p className="text-lg text-gray-600 leading-relaxed">
+                QR 코드를 스캔하면 휴대폰으로
+                <br />
+                부스 정보를 확인할 수 있어요!
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
       <BoothModal
         booth={selectedBooth}
         boothImage={selectedBooth ? boothImages[selectedBooth.id] : null}
