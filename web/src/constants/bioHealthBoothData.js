@@ -18,7 +18,7 @@ const bioHealthBoothData = [
   },
   {
     id: "b-2",
-    name: "생명의 코드, 우리 몸과 DNA",
+    name: "생명의 코드, DNA 사이언스랩",
     img: "img/b/b-2.jpg",
     category: "바이오 헬스",
     subCategory: "바이오헬스",
