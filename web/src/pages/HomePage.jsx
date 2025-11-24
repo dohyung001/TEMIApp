@@ -66,7 +66,7 @@ export default function HomePage() {
         <BlueRobotIcon />
         <p> &nbsp;안녕하세요, </p>
         <h4 className="font-bold">&nbsp;TEMI</h4>
-        <p>예요.</p>
+        <p onClick={() => navigate("/test")}>예요.</p>
       </div>
 
       {/* 메인 컨텐츠 - flex-1로 남은 공간 모두 차지 */}

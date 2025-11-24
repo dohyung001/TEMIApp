@@ -70,7 +70,7 @@ export default function TestPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
+    <div className=" text-white p-8">
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-8">
         <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
