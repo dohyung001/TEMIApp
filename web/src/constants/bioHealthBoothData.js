@@ -34,7 +34,7 @@ const bioHealthBoothData = [
   },
   {
     id: "b-3",
-    name: "이동의 경계를 넘어, 게임으로 확장된 세상",
+    name: "장애인을 위한 디지털 치료제 : e 스포츠 휠체어 레이싱 체험존",
     img: "img/b/b-3.jpg",
     category: "바이오 헬스",
     subCategory: "바이오헬스",
@@ -50,7 +50,7 @@ const bioHealthBoothData = [
   },
   {
     id: "b-4",
-    name: "기술로 되찾는 움직임, 로봇이 전하는 희복의 미래",
+    name: "웨어러블 보행 보조 로봇 : 보행 로봇 체험존",
     img: "img/b/b-4.jpg",
     category: "바이오 헬스",
     subCategory: "바이오헬스",
