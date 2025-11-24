@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import NavigateIcon from "../assets/icons/navigate.svg?react";
-import RightArrowIcon from "../assets/icons/right_arrow.svg?react";
 import AngleButton from "../components/AngleButton";
 import Divider from "../components/Divider";
 
@@ -21,13 +20,14 @@ export default function NavigationPage() {
       </p>
 
       <Divider />
-
-      <AngleButton
-        icon={<RightArrowIcon />}
-        onClick={() => navigate("/navigation/step2")}
-      >
-        길찾기
-      </AngleButton>
+      <div className="flex gap-4">
+        <AngleButton onClick={() => navigate("/navigation/step1")}>
+          편의 시설
+        </AngleButton>
+        <AngleButton onClick={() => navigate("/navigation/step2")}>
+          체험 부스
+        </AngleButton>
+      </div>
     </div>
   );
 }

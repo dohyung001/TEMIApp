@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { XMarkIcon } from "@heroicons/react/24/solid";
 import CardGroupIcon from "../assets/icons/card_group.svg?react";
 import { motion, AnimatePresence } from "framer-motion";
-
+import CrownIcon from "../assets/icons/crown.svg?react";
 // 카드 데이터
 const CARD_DATA = [
   {
@@ -80,22 +80,22 @@ const CardBack = ({ className = "", onClick, style, ...props }) => {
     <div
       onClick={onClick}
       className={`
-        rounded-2xl border-[10px] border-solid border-[#fffce7]
+        rounded-2xl border-[10px] border-solid border-[#FFFCE8]
         flex flex-col items-center justify-center
         p-2 transform-gpu will-change-transform cursor-pointer
-        aspect-[2/3]
+        aspect-[2/3] w-[147px] h-[207px]
         ${className}
       `}
       style={{
         background:
-          "linear-gradient(168deg, rgb(65, 150, 215) 0%, #e2f0ff 100%)",
-        boxShadow: "0px 0px 6px rgba(63, 63, 63, 0.25)", // 시각적 동일, 성능 ↓
+          "linear-gradient(180deg, rgba(65, 150, 215, 0.9) 4.64%, #CAFFD6 91%)",
+        boxShadow: "0px 0px 6px rgba(63, 63, 63, 0.25)",
         ...style,
       }}
       {...props}
     >
       <span className="text-8xl text-emerald-300 opacity-90 drop-shadow-lg">
-        🍀
+        <CrownIcon />
       </span>
     </div>
   );
@@ -139,7 +139,7 @@ export default function FortuneGame() {
 
       {/* --- 카드 선택 화면 --- */}
       {screen === "selection" && (
-        <div className="text-center animate-fade-in w-full max-w-7xl">
+        <div className="text-center animate-fade-in w-full max-w-[75%]">
           <h1 className="text-6xl font-extrabold text-slate-800 mb-4">
             오늘의 운세
           </h1>
@@ -189,18 +189,19 @@ export default function FortuneGame() {
                 transition={{ duration: 0.5, ease: "easeOut" }}
               >
                 {/* 뒷면 */}
+                {/* 뒷면 */}
                 <div
-                  className="absolute w-full h-full rounded-3xl border-[10px] border-[#fffce7] flex items-center justify-center"
+                  className="absolute w-full h-full rounded-3xl border-[10px] border-[#FFFCE8] flex items-center justify-center"
                   style={{
                     backfaceVisibility: "hidden",
                     WebkitBackfaceVisibility: "hidden",
                     background:
-                      "linear-gradient(168deg, rgb(65, 150, 215) 0%, #e2f0ff 100%)",
+                      "linear-gradient(180deg, rgba(65, 150, 215, 0.9) 4.64%, #CAFFD6 91%)",
                     transform: "translateZ(0)",
                   }}
                 >
                   <span className="text-9xl text-emerald-300 opacity-90">
-                    🍀
+                    <CrownIcon />
                   </span>
                 </div>
 

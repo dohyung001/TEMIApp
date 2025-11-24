@@ -5,7 +5,6 @@ import PageLayout from "../layouts/PageLayout";
 import HomePage from "../pages/HomePage";
 import NavigationPage from "../pages/NavigationPage";
 import InfoPage from "../pages/InfoPage";
-import PlayPage from "../pages/PlayPage";
 import PhotoPage from "../pages/PhotoPage";
 import RecommendPage from "../pages/RecommendPage";
 import FortunePage from "../pages/FortunePage";
@@ -17,6 +16,7 @@ import TestSizePage from "../pages/TestSizePage";
 import DancePage from "../pages/DancePage";
 import DancePlayPage from "../components/dance/DancePlayPage";
 import NavigattionStep2 from "../components/navigation/NavigattionStep2";
+import NavigattionStep from "../components/navigation/NavigattionStep";
 const router = createBrowserRouter([
   // 나머지 페이지들 (PageLayout)
   {
@@ -26,6 +26,7 @@ const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
       { path: "/navigation", element: <NavigationPage /> }, // 길 안내
       { path: "/navigation/step2", element: <NavigattionStep2 /> },
+      { path: "/navigation/step1", element: <NavigattionStep /> },
 
       { path: "/dance", element: <DancePage /> },
       { path: "/dance/:songId", element: <DancePlayPage /> },
