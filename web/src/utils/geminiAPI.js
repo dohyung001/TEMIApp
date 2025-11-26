@@ -84,8 +84,8 @@ const geminiAPI = axios.create({
  */
 export async function callGeminiAPI(userMessage) {
   try {
-    const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-
+    const API_KEY = "AIzaSyCl3Sq2gIHW0NQYFExi_V6Zv6J-If9M3Fg";
+    console.log(API_KEY);
     if (!API_KEY) {
       console.error("❌ Gemini API 키가 설정되지 않았습니다");
       return "죄송해요, 설정 오류가 발생했어요!";

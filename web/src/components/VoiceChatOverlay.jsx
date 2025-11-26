@@ -77,7 +77,7 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
     if (isOpen) {
       console.log("🟢 [Overlay] 오픈 - 초기화 및 듣기 시작");
 
-      setMessages([{ role: "user", text: "text" }]);
+      setMessages([]);
       setCurrentStep("idle");
 
       setTimeout(() => {

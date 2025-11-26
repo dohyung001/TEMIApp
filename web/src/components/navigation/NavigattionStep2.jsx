@@ -197,20 +197,6 @@ export default function NavigationStep2() {
             />
             <SearchIcon />
           </div>
-
-          {/* 입구/출구 버튼 */}
-          <button
-            onClick={() => window.TemiInterface?.goTo("입구")}
-            className="bg-green-500 text-white text-xl font-bold py-4 px-8 rounded-full whitespace-nowrap"
-          >
-            🚪 입구
-          </button>
-          <button
-            onClick={() => window.TemiInterface?.goTo("출구")}
-            className="bg-red-500 text-white text-xl font-bold py-4 px-8 rounded-full whitespace-nowrap"
-          >
-            🚪 출구
-          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto scrollbar-hide mt-8">

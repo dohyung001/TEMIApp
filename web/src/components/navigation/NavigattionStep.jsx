@@ -111,7 +111,7 @@ export default function FacilityNavigationStep() {
 
   const handleNavigate = (facility) => {
     if (window.TemiInterface) {
-      window.TemiInterface.goTo(facility.location);
+      window.TemiInterface.goTo(facility.location || facility.name);
       console.log(`길안내 시작: ${facility.name}`);
     }
   };
