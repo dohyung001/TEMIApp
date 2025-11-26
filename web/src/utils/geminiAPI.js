@@ -5,7 +5,7 @@ import {
   generateBoothDetail,
   findBoothInMessage,
 } from "./boothSummary";
-
+import axios from "axios";
 // ========== 기본 시스템 프롬프트 (벡스코 + 테미 정보) ==========
 const BASE_SYSTEM_PROMPT = `당신은 테미(Temi)라는 친근한 안내 로봇입니다.
 
@@ -148,8 +148,7 @@ function buildDynamicPrompt(userMessage) {
  * Gemini API 호출
  * @param {string} userMessage - 사용자 메시지
  * @returns {Promise<string>} - AI 응답 텍스트
- */
-export async function callGeminiAPI(userMessage) {
+ */ export async function callGeminiAPI(userMessage) {
   try {
     const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
@@ -160,35 +159,32 @@ export async function callGeminiAPI(userMessage) {
 
     // 🎯 동적 프롬프트 생성
     const dynamicPrompt = buildDynamicPrompt(userMessage);
-
     console.log("📊 프롬프트 길이:", dynamicPrompt.length, "글자");
 
-    const response = await fetch(
+    const response = await axios.post(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
       {
-        method: "POST",
+        systemInstruction: {
+          parts: [{ text: dynamicPrompt }],
+        },
+        contents: [
+          {
+            parts: [{ text: userMessage }],
+          },
+        ],
+      },
+      {
+        params: {
+          key: API_KEY,
+        },
         headers: {
           "Content-Type": "application/json",
-          "x-goog-api-key": API_KEY,
         },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: dynamicPrompt }],
-          },
-          contents: [
-            {
-              parts: [{ text: userMessage }],
-            },
-          ],
-        }),
       }
     );
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
+    // axios는 자동으로 JSON 파싱
+    const data = response.data;
 
     if (data.error) {
       console.error("❌ Gemini API 오류:", data.error);
@@ -202,7 +198,18 @@ export async function callGeminiAPI(userMessage) {
     console.error("❌ 응답 형식 오류:", data);
     return "죄송해요, 응답을 처리할 수 없어요!";
   } catch (error) {
-    console.error("❌ Gemini API 오류:", error);
+    // axios 에러 처리
+    if (error.response) {
+      console.error(
+        "❌ Gemini API 오류:",
+        error.response.status,
+        error.response.data
+      );
+    } else if (error.request) {
+      console.error("❌ 네트워크 오류:", error.message);
+    } else {
+      console.error("❌ 요청 오류:", error.message);
+    }
     return "죄송해요, 오류가 발생했어요!";
   }
 }
