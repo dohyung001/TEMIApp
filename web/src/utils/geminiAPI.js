@@ -1,7 +1,13 @@
 // web/src/utils/geminiAPI.js
-import axios from "axios";
+import allBooths, { findBoothByName } from "../constants/allBooths";
+import {
+  generateBoothSummary,
+  generateBoothDetail,
+  findBoothInMessage,
+} from "./boothSummary";
 
-const TEMI_SYSTEM_PROMPT = `당신은 테미(Temi)라는 친근한 안내 로봇입니다.
+// ========== 기본 시스템 프롬프트 (벡스코 + 테미 정보) ==========
+const BASE_SYSTEM_PROMPT = `당신은 테미(Temi)라는 친근한 안내 로봇입니다.
 
 # 행사 정보:
 - 행사명: 2025 CO-SHOW (코쇼)
@@ -25,7 +31,7 @@ const TEMI_SYSTEM_PROMPT = `당신은 테미(Temi)라는 친근한 안내 로봇
 - 규모: 대한민국 대표 전시컨벤션센터
 - 주요 시설: 제1전시장, 제2전시장, 컨벤션홀
 
-# 편의시설 (일반적인 BEXCO 정보):
+# 편의시설:
 - 화장실: 각 전시장 층마다 위치
 - 식당/카페: 각 층 및 지하 푸드코트
 - 주차장: 지하 및 지상 주차장 운영
@@ -63,83 +69,140 @@ const TEMI_SYSTEM_PROMPT = `당신은 테미(Temi)라는 친근한 안내 로봇
 
 # 테미의 말투:
 - "~해요", "~이에요" 친근한 존댓말
-- 2-3문장으로 간결하게 답변(가능하면 짧게)
+- 2-3문장으로 간결하게 답변 (가능하면 짧게)
 - 이모지 사용 불가능
-- 안내용 로봇이 실제로 말하는 것 처럼 대답할 것
+- 안내용 로봇이 실제로 말하는 것처럼 대답할 것
 - 모르는 건 솔직히 "잘 모르겠어요"라고 답변
 - 기능 사용을 권유할 때는 "화면의 ○○○ 버튼을 눌러주세요" 형식으로 안내`;
 
-// Axios 인스턴스 생성
-const geminiAPI = axios.create({
-  baseURL: "https://generativelanguage.googleapis.com/v1beta",
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
+// ========== 부스 요약 정보 (한 번만 생성) ==========
+const BOOTH_SUMMARY = generateBoothSummary(allBooths);
 
 /**
- * Gemini API를 호출하여 응답을 받는 함수
+ * 사용자 메시지 분석하여 동적 프롬프트 생성
  * @param {string} userMessage - 사용자 메시지
- * @returns {Promise<string>} AI 응답 텍스트
+ * @returns {string} - 최적화된 시스템 프롬프트
+ */
+function buildDynamicPrompt(userMessage) {
+  // 특정 부스에 대한 질문인지 확인
+  const mentionedBooth = findBoothInMessage(userMessage, allBooths);
+
+  if (mentionedBooth) {
+    // 특정 부스 질문 → 해당 부스 상세 정보 추가
+    const boothDetail = generateBoothDetail(mentionedBooth);
+    return `${BASE_SYSTEM_PROMPT}\n\n${boothDetail}`;
+  }
+
+  // 카테고리 키워드 확인
+  const categoryKeywords = {
+    AI: "인공지능",
+    인공지능: "인공지능",
+    빅데이터: "빅데이터",
+    데이터: "빅데이터",
+    사물인터넷: "사물인터넷",
+    IoT: "사물인터넷",
+    실감미디어: "실감미디어",
+    VR: "실감미디어",
+    메타버스: "실감미디어",
+    로봇: "지능형로봇",
+    드론: "항공드론",
+    자동차: "미래자동차",
+    에너지: "에너지신사업",
+    친환경: "에너지신사업",
+    수소: "에너지신사업",
+    배터리: "이차전지",
+    바이오: "바이오헬스",
+    헬스: "바이오헬스",
+    반도체: "차세대반도체",
+  };
+
+  // 메시지에서 카테고리 키워드 찾기
+  let detectedCategory = null;
+  for (const [keyword, category] of Object.entries(categoryKeywords)) {
+    if (userMessage.includes(keyword)) {
+      detectedCategory = category;
+      break;
+    }
+  }
+
+  // 카테고리별 질문이면 해당 카테고리 부스만 추가
+  if (detectedCategory) {
+    const categoryBooths = allBooths.filter(
+      (booth) => booth.subCategory === detectedCategory
+    );
+
+    if (categoryBooths.length > 0) {
+      let categoryInfo = `\n\n# ${detectedCategory} 부스 목록:\n`;
+      categoryBooths.forEach((booth) => {
+        categoryInfo += `- ${booth.name}: ${booth.description}\n`;
+      });
+      return `${BASE_SYSTEM_PROMPT}${categoryInfo}`;
+    }
+  }
+
+  // 일반 질문 → 기본 프롬프트 + 부스 요약만
+  return `${BASE_SYSTEM_PROMPT}\n\n${BOOTH_SUMMARY}`;
+}
+
+/**
+ * Gemini API 호출
+ * @param {string} userMessage - 사용자 메시지
+ * @returns {Promise<string>} - AI 응답 텍스트
  */
 export async function callGeminiAPI(userMessage) {
   try {
-    const API_KEY = "AIzaSyCl3Sq2gIHW0NQYFExi_V6Zv6J-If9M3Fg";
-    console.log(API_KEY);
+    const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
     if (!API_KEY) {
       console.error("❌ Gemini API 키가 설정되지 않았습니다");
       return "죄송해요, 설정 오류가 발생했어요!";
     }
 
-    const response = await geminiAPI.post(
-      "/models/gemini-2.0-flash-exp:generateContent",
+    // 🎯 동적 프롬프트 생성
+    const dynamicPrompt = buildDynamicPrompt(userMessage);
+
+    console.log("📊 프롬프트 길이:", dynamicPrompt.length, "글자");
+
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
       {
-        systemInstruction: {
-          parts: [{ text: TEMI_SYSTEM_PROMPT }],
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": API_KEY,
         },
-        contents: [
-          {
-            parts: [{ text: userMessage }],
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: dynamicPrompt }],
           },
-        ],
-      },
-      {
-        params: {
-          key: API_KEY,
-        },
+          contents: [
+            {
+              parts: [{ text: userMessage }],
+            },
+          ],
+        }),
       }
     );
 
-    // 응답 검증
-    if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-      return response.data.candidates[0].content.parts[0].text;
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    console.error("❌ Gemini API 응답 형식 오류:", response.data);
+    const data = await response.json();
+
+    if (data.error) {
+      console.error("❌ Gemini API 오류:", data.error);
+      return "앗, 다시 말씀해주세요!";
+    }
+
+    if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      return data.candidates[0].content.parts[0].text;
+    }
+
+    console.error("❌ 응답 형식 오류:", data);
     return "죄송해요, 응답을 처리할 수 없어요!";
   } catch (error) {
-    // Axios 에러 처리
-    if (error.response) {
-      // 서버 응답 오류 (4xx, 5xx)
-      console.error("❌ Gemini API 오류:", {
-        status: error.response.status,
-        data: error.response.data,
-      });
-
-      if (error.response.status === 403) {
-        return "죄송해요, API 키 문제가 있어요!";
-      } else if (error.response.status === 429) {
-        return "죄송해요, 요청이 너무 많아요. 잠시 후 다시 시도해주세요!";
-      }
-    } else if (error.request) {
-      // 요청은 보냈지만 응답 없음
-      console.error("❌ 네트워크 오류:", error.request);
-      return "죄송해요, 네트워크 오류가 발생했어요!";
-    } else {
-      // 요청 설정 중 오류
-      console.error("❌ 요청 설정 오류:", error.message);
-    }
-
+    console.error("❌ Gemini API 오류:", error);
     return "죄송해요, 오류가 발생했어요!";
   }
 }

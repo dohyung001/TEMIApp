@@ -115,7 +115,7 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
 
     window.onSpeechReady = () => {
       console.log("✅ [onSpeechReady] 음성 인식 준비 완료");
-      TemiBridge.showToast("듣고 있어요! 말씀해주세요 🎤");
+      //TemiBridge.showToast("듣고 있어요! 말씀해주세요 🎤");
     };
 
     window.onSpeechStart = () => {
@@ -127,7 +127,7 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
         listeningTimeoutRef.current = null;
       }
 
-      TemiBridge.showToast("음성이 감지되었어요!");
+      //TemiBridge.showToast("음성이 감지되었어요!");
     };
 
     window.onSpeechEnd = () => {
@@ -233,7 +233,7 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
       }
 
       console.log(`📢 [오류] ${errorMessage}`);
-      TemiBridge.showToast(errorMessage);
+      //TemiBridge.showToast(errorMessage);
 
       if (error !== "no_permission" && error !== "not_available") {
         console.log("🔄 2초 후 재시도");
