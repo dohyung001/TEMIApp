@@ -55,8 +55,21 @@ export async function composeImageWithTheme(photoSrc, theme) {
             reject
           );
           break;
-        case "robot":
-          applyRobotTheme(
+        case "tuffy":
+          applyTuffyTheme(
+            ctx,
+            canvas,
+            photo,
+            paddingX,
+            paddingTop,
+            photoWidth,
+            photoHeight,
+            resolve,
+            reject
+          );
+          break;
+        case "gromit":
+          applyGromitTheme(
             ctx,
             canvas,
             photo,
@@ -71,6 +84,19 @@ export async function composeImageWithTheme(photoSrc, theme) {
         default:
           reject(new Error("알 수 없는 테마"));
           break;
+        case "rico":
+          applyRicoTheme(
+            ctx,
+            canvas,
+            photo,
+            paddingX,
+            paddingTop,
+            photoWidth,
+            photoHeight,
+            resolve,
+            reject
+          );
+          break;
       }
     };
 
@@ -79,8 +105,7 @@ export async function composeImageWithTheme(photoSrc, theme) {
   });
 }
 
-// COSS 테마 (파란색 배경 + COSS 로고 이미지)// imageComposer.js
-
+// COSS 테마 (파란색 배경 + COSS 로고 이미지)
 async function applyOceanTheme(
   ctx,
   canvas,
@@ -185,7 +210,9 @@ function applyCloverTheme(
 }
 
 // 로봇 테마 (하늘색 배경 + 로봇 - 가운데)
-function applyRobotTheme(
+
+// Tuffy 테마 (검은색 배경 + Tuffy 이미지 - 우측에 사진 침범)
+async function applyTuffyTheme(
   ctx,
   canvas,
   photo,
@@ -198,20 +225,137 @@ function applyRobotTheme(
 ) {
   const width = canvas.width;
   const height = canvas.height;
-  const paddingBottom = 220;
 
-  // 배경색 (하늘색)
-  ctx.fillStyle = "#DBEAFE";
+  // 배경색 (검은색)
+  ctx.fillStyle = "#000000";
   ctx.fillRect(0, 0, width, height);
 
   // 원본 사진 그리기
   ctx.drawImage(photo, paddingX, paddingTop, photoWidth, photoHeight);
 
-  // 로봇 이모지 (아래 패딩 가운데)
-  ctx.font = "150px Arial";
-  ctx.textAlign = "center";
-  const robotY = height - paddingBottom / 2 + 60;
-  ctx.fillText("🤖", width / 2, robotY);
+  try {
+    let tuffySrc;
 
-  resolve(canvas.toDataURL("image/jpeg", 0.95));
+    // ✅ Temi 환경
+    if (window.Temi && window.Temi.loadThemeImage) {
+      tuffySrc = window.Temi.loadThemeImage("tuffy.png");
+    }
+    // ✅ 웹 환경
+    else {
+      tuffySrc = "/img/tuffy.png";
+    }
+
+    if (!tuffySrc) {
+      throw new Error("Tuffy 이미지 로드 실패");
+    }
+
+    const tuffyImage = new Image();
+    tuffyImage.onload = () => {
+      // Tuffy 크기 설정 (사진 높이의 80% 정도)
+      const tuffyHeight = photoHeight * 0.7;
+      const tuffyWidth = tuffyImage.width * (tuffyHeight / tuffyImage.height);
+
+      // Tuffy 위치: 오른쪽에 배치하되 사진을 약 15% 침범
+      const tuffyX = width - tuffyWidth * 0.9; // 우측에서 15% 침범
+      const tuffyY = height - tuffyHeight + 40; // 하단에서 30px 위// 사진 영역 수직 중앙
+
+      // Tuffy 이미지 그리기
+      ctx.drawImage(tuffyImage, tuffyX, tuffyY, tuffyWidth, tuffyHeight);
+
+      resolve(canvas.toDataURL("image/jpeg", 0.95));
+    };
+
+    tuffyImage.onerror = () => {
+      console.error("Tuffy 이미지 렌더링 실패");
+      // 폴백: Tuffy 없이 검은 배경만
+      resolve(canvas.toDataURL("image/jpeg", 0.95));
+    };
+
+    tuffyImage.src = tuffySrc;
+  } catch (error) {
+    console.error("Tuffy 이미지 로드 실패:", error);
+    // 폴백: Tuffy 없이 검은 배경만
+    resolve(canvas.toDataURL("image/jpeg", 0.95));
+  }
+}
+async function applyGromitTheme(
+  ctx,
+  canvas,
+  photo,
+  paddingX,
+  paddingTop,
+  photoWidth,
+  photoHeight,
+  resolve,
+  reject
+) {
+  const width = canvas.width;
+  const height = canvas.height;
+
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 0, width, height);
+  ctx.drawImage(photo, paddingX, paddingTop, photoWidth, photoHeight);
+
+  try {
+    let gromitSrc = window.Temi?.loadThemeImage
+      ? window.Temi.loadThemeImage("gromit.png")
+      : "/img/gromit.png";
+
+    const gromitImage = new Image();
+    gromitImage.onload = () => {
+      const gromitHeight = photoHeight * 0.7;
+      const gromitWidth =
+        gromitImage.width * (gromitHeight / gromitImage.height);
+      const gromitX = width - gromitWidth * 1;
+      const gromitY = height - gromitHeight; // ⭐ 하단 정렬
+
+      ctx.drawImage(gromitImage, gromitX, gromitY, gromitWidth, gromitHeight);
+      resolve(canvas.toDataURL("image/jpeg", 0.95));
+    };
+
+    gromitImage.onerror = () => resolve(canvas.toDataURL("image/jpeg", 0.95));
+    gromitImage.src = gromitSrc;
+  } catch (error) {
+    resolve(canvas.toDataURL("image/jpeg", 0.95));
+  }
+}
+async function applyRicoTheme(
+  ctx,
+  canvas,
+  photo,
+  paddingX,
+  paddingTop,
+  photoWidth,
+  photoHeight,
+  resolve,
+  reject
+) {
+  const width = canvas.width;
+  const height = canvas.height;
+
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 0, width, height);
+  ctx.drawImage(photo, paddingX, paddingTop, photoWidth, photoHeight);
+
+  try {
+    let ricoSrc = window.Temi?.loadThemeImage
+      ? window.Temi.loadThemeImage("rico.png")
+      : "/img/rico.png";
+
+    const ricoImage = new Image();
+    ricoImage.onload = () => {
+      const ricoHeight = photoHeight * 0.9;
+      const ricoWidth = ricoImage.width * (ricoHeight / ricoImage.height);
+      const ricoX = paddingX - ricoWidth * 0.25; // ⭐ 왼쪽 침범 (15%)
+      const ricoY = height - ricoHeight + 60;
+
+      ctx.drawImage(ricoImage, ricoX, ricoY, ricoWidth, ricoHeight);
+      resolve(canvas.toDataURL("image/jpeg", 0.95));
+    };
+
+    ricoImage.onerror = () => resolve(canvas.toDataURL("image/jpeg", 0.95));
+    ricoImage.src = ricoSrc;
+  } catch (error) {
+    resolve(canvas.toDataURL("image/jpeg", 0.95));
+  }
 }

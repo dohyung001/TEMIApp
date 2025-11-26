@@ -57,50 +57,97 @@ export default function Step4({ capturedPhoto, themes, onConfirm, onCancel }) {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8">
-      {/* 3개 프레임 미리보기 (합성된 이미지) */}
-      <div className="flex gap-8 mb-12">
-        {themes.map((theme) => (
-          <button
-            key={theme.id}
-            onClick={() => handleThemeClick(theme.id)}
-            disabled={composing}
-            className={`
-              relative
-              
-              transition-all
-              
-              ${composing ? "opacity-50 cursor-not-allowed" : ""}
-            `}
-            style={{
-              boxShadow:
-                selectedThemeId === theme.id
-                  ? "0 0 0 8px #3B82F6" // 선택 시 파란 테두리
-                  : "0 0 16.9px 0 #000000", // 피그마 섀도우
-            }}
-          >
-            {/* 합성된 사진 미리보기 */}
-            <div className="w-full h-full overflow-hidden">
-              {composedPreviews[theme.id] ? (
-                <img
-                  src={composedPreviews[theme.id]}
-                  alt={theme.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gray-600 flex items-center justify-center">
-                  <span className="text-white text-2xl">로딩 실패</span>
+      {/* 프레임 미리보기 */}
+      <div className="mb-12">
+        {/* 첫 번째 줄: 3개 */}
+        <div className="flex gap-8 mb-8 justify-center">
+          {themes.slice(0, 2).map((theme) => (
+            <button
+              key={theme.id}
+              onClick={() => handleThemeClick(theme.id)}
+              disabled={composing}
+              className={`
+                w-[400px]
+                relative
+                transition-all
+                ${composing ? "opacity-50 cursor-not-allowed" : ""}
+              `}
+              style={{
+                boxShadow:
+                  selectedThemeId === theme.id
+                    ? "0 0 0 8px #3B82F6"
+                    : "0 0 16.9px 0 #000000",
+              }}
+            >
+              {/* 합성된 사진 미리보기 */}
+              <div className="w-full h-full overflow-hidden">
+                {composedPreviews[theme.id] ? (
+                  <img
+                    src={composedPreviews[theme.id]}
+                    alt={theme.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-600 flex items-center justify-center">
+                    <span className="text-white text-2xl">로딩 실패</span>
+                  </div>
+                )}
+              </div>
+
+              {/* 선택 표시 (체크마크) */}
+              {selectedThemeId === theme.id && (
+                <div className="absolute -top-4 -right-4 bg-blue-500 text-white rounded-full w-12 h-12 flex items-center justify-center text-2xl font-bold shadow-lg">
+                  ✓
                 </div>
               )}
-            </div>
+            </button>
+          ))}
+        </div>
 
-            {/* 선택 표시 (체크마크) */}
-            {selectedThemeId === theme.id && (
-              <div className="absolute -top-4 -right-4 bg-blue-500 text-white rounded-full w-12 h-12 flex items-center justify-center text-2xl font-bold shadow-lg">
-                ✓
+        {/* 두 번째 줄: 2개 (중앙 정렬) */}
+        <div className="flex gap-8 justify-center">
+          {themes.slice(2).map((theme) => (
+            <button
+              key={theme.id}
+              onClick={() => handleThemeClick(theme.id)}
+              disabled={composing}
+              className={`
+                w-[400px]
+                relative
+                transition-all
+                ${composing ? "opacity-50 cursor-not-allowed" : ""}
+              `}
+              style={{
+                boxShadow:
+                  selectedThemeId === theme.id
+                    ? "0 0 0 8px #3B82F6"
+                    : "0 0 16.9px 0 #000000",
+              }}
+            >
+              {/* 합성된 사진 미리보기 */}
+              <div className="w-full h-full overflow-hidden">
+                {composedPreviews[theme.id] ? (
+                  <img
+                    src={composedPreviews[theme.id]}
+                    alt={theme.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-600 flex items-center justify-center">
+                    <span className="text-white text-2xl">로딩 실패</span>
+                  </div>
+                )}
               </div>
-            )}
-          </button>
-        ))}
+
+              {/* 선택 표시 (체크마크) */}
+              {selectedThemeId === theme.id && (
+                <div className="absolute -top-4 -right-4 bg-blue-500 text-white rounded-full w-12 h-12 flex items-center justify-center text-2xl font-bold shadow-lg">
+                  ✓
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 버튼 영역 */}

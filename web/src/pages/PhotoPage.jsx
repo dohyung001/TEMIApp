@@ -19,7 +19,7 @@ export default function PhotoPage() {
   const [finalPhoto, setFinalPhoto] = useState(null); // 최종 합성 사진
   const [qrCode, setQrCode] = useState(null); // QR 코드 URL
 
-  // 테마 목록 (3개)
+  // 테마 목록 (4개)
   const themes = [
     {
       id: "coss",
@@ -28,8 +28,10 @@ export default function PhotoPage() {
       id: "clover",
     },
     {
-      id: "robot",
+      id: "tuffy",
     },
+    { id: "gromit" },
+    { id: "rico" },
   ];
 
   // ===== 핸들러 =====
@@ -135,7 +137,7 @@ export default function PhotoPage() {
         />
       )}
 
-      {/* Step 4: 테마 선택 (3개 미리보기) */}
+      {/* Step 4: 테마 선택 (4개 미리보기) */}
       {currentStep === 4 && (
         <Step4
           capturedPhoto={capturedPhoto}
