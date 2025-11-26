@@ -164,7 +164,7 @@ export default function VoiceChatOverlay({ isOpen, onClose }) {
 
         TemiBridge.speak(response);
 
-        const estimatedDuration = response.length * 100;
+        const estimatedDuration = response.length * 150;
 
         if (ttsTimeoutRef.current) {
           clearTimeout(ttsTimeoutRef.current);
