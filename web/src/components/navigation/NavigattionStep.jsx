@@ -1,16 +1,4 @@
-import InfoQr from "/img/qrs/info_qr.png";
-
-const InfoIcon = ({ className }) => (
-  <svg
-    className={className}
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <circle cx="12" cy="12" r="10" strokeWidth="2" />
-    <path d="M12 16v-4M12 8h.01" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
+import { TemiBridge } from "../../services/temiBridge";
 
 // 시설별 아이콘 컴포넌트
 const EntranceIcon = () => (
@@ -110,9 +98,12 @@ export default function FacilityNavigationStep() {
   ];
 
   const handleNavigate = (facility) => {
-    if (window.TemiInterface) {
-      window.TemiInterface.goTo(facility.location || facility.name);
-      console.log(`길안내 시작: ${facility.name}`);
+    if (facility.location) {
+      TemiBridge.goTo(facility.location);
+      TemiBridge.speak(`${facility.name}로 안내를 시작합니다`);
+    } else {
+      TemiBridge.showToast("저장된 위치를 찾을 수 없습니다");
+      TemiBridge.speak("죄송합니다. 해당 위치가 등록되어 있지 않습니다");
     }
   };
 

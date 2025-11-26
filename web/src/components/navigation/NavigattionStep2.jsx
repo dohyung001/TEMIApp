@@ -101,15 +101,6 @@ export default function NavigationStep2() {
     );
   }, [data, debouncedSearchTerm]);
 
-  // 길안내 시작
-  const handleNavigate = (booth) => {
-    if (window.TemiInterface) {
-      window.TemiInterface.goTo(booth.location || booth.name);
-      console.log(`길안내 시작: ${booth.name}`);
-    }
-    setSelectedBooth(null);
-  };
-
   return (
     <div className="flex w-full h-screen">
       <aside className="flex-shrink-0">
@@ -251,7 +242,6 @@ export default function NavigationStep2() {
         booth={selectedBooth}
         boothImage={selectedBooth ? boothImages[selectedBooth.id] : null}
         onClose={() => setSelectedBooth(null)}
-        onNavigate={handleNavigate}
         category={selected}
       />
     </div>
