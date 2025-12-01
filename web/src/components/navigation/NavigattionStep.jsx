@@ -49,7 +49,7 @@ const RestroomIcon = () => (
   </svg>
 );
 
-const InfoDeskIcon = () => (
+const StampEventIcon = () => (
   <svg
     className="w-24 h-24"
     fill="none"
@@ -60,7 +60,15 @@ const InfoDeskIcon = () => (
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth={2}
-      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+    />
+    <circle
+      cx="12"
+      cy="12"
+      r="3"
+      strokeWidth={2}
+      fill="currentColor"
+      opacity="0.2"
     />
   </svg>
 );
@@ -90,10 +98,10 @@ export default function FacilityNavigationStep() {
     },
     {
       id: "info",
-      name: "안내데스크",
-      icon: InfoDeskIcon,
-      location: "안내데스크",
-      description: "안내데스크로 안내해드립니다",
+      name: "코스탬프 투어 이벤트",
+      icon: StampEventIcon,
+      location: "코스탬프 투어 이벤트",
+      description: "코스탬프 투어 이벤트로 안내해드립니다",
     },
   ];
 
